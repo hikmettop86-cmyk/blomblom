@@ -1,0 +1,318 @@
+2025-11-26 00:28:35,952 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:28:35,956 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:28:40,624 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:28:40,625 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:28:43,488 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:28:43,488 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:28:43,488 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:28:43,494 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:28:43,828 - INFO - ✅ NVIDIA GPU tespit edildi (h264_nvenc)
+2025-11-26 00:28:43,980 - INFO - 🎯 Seçilen encoder: NVIDIA (h264_nvenc)
+2025-11-26 00:28:43,982 - INFO - 📝 Encoding log: C:\render\encoding_params.jsonl
+2025-11-26 00:28:43,983 - INFO - 📝 FFmpeg Humanization encoding log initialized
+2025-11-26 00:28:44,003 - ERROR - ❌ Klasörde video dosyası bulunamadı: C:\randoms
+2025-11-26 00:28:44,003 - INFO -    💡 Desteklenen formatlar: .webm, .flv, .wmv, .m4v, .avi, .mkv, .mp4, .mov
+2025-11-26 00:29:56,458 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:29:56,459 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:29:56,803 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:29:56,803 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:29:56,803 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:29:56,804 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:29:57,106 - INFO - ✅ NVIDIA GPU tespit edildi (h264_nvenc)
+2025-11-26 00:29:57,249 - INFO - 🎯 Seçilen encoder: NVIDIA (h264_nvenc)
+2025-11-26 00:29:57,251 - INFO - 📝 Encoding log: C:\render\encoding_params.jsonl
+2025-11-26 00:29:57,251 - INFO - 📝 FFmpeg Humanization encoding log initialized
+2025-11-26 00:29:57,271 - ERROR - ❌ Klasörde video dosyası bulunamadı: C:\randoms
+2025-11-26 00:29:57,271 - INFO -    💡 Desteklenen formatlar: .m4v, .mov, .wmv, .mp4, .mkv, .avi, .webm, .flv
+2025-11-26 00:31:04,693 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:31:04,694 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:31:06,484 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:31:06,485 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:31:06,485 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:31:06,486 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:31:06,864 - INFO - ✅ NVIDIA GPU tespit edildi (h264_nvenc)
+2025-11-26 00:31:07,027 - INFO - 🎯 Seçilen encoder: NVIDIA (h264_nvenc)
+2025-11-26 00:31:07,029 - INFO - 📝 Encoding log: C:\render\encoding_params.jsonl
+2025-11-26 00:31:07,029 - INFO - 📝 FFmpeg Humanization encoding log initialized
+2025-11-26 00:31:07,051 - INFO - ✅ 8 video dosyası bulundu
+2025-11-26 00:32:29,470 - ERROR - Whisper veya torch kurulu değil!
+2025-11-26 00:32:29,471 - INFO - 🔍 Sahne tespiti: grok-video-5f50f13b-8bed-4961-a679-9ca4ee18590b.mp4
+2025-11-26 00:32:29,541 - INFO - 🔍 Sahne tespiti: grok-video-6e0cde0f-8cd6-4c61-9b5b-2b7c7742a40d-0.mp4
+2025-11-26 00:32:29,624 - INFO - 🔍 Sahne tespiti: grok-video-1f63675b-0d63-41cd-a403-5e0a8b3fec08-3.mp4
+2025-11-26 00:32:29,689 - INFO - 🔍 Sahne tespiti: grok-video-6e0cde0f-8cd6-4c61-9b5b-2b7c7742a40d-0.mp4
+2025-11-26 00:32:29,777 - INFO - 🔍 Sahne tespiti: grok-video-1b67c0d8-4910-4994-92fb-5335e453d917-2.mp4
+2025-11-26 00:32:29,867 - INFO - 🔍 Sahne tespiti: grok-video-1b67c0d8-4910-4994-92fb-5335e453d917-1.mp4
+2025-11-26 00:32:29,963 - INFO - 🔍 Sahne tespiti: grok-video-1b67c0d8-4910-4994-92fb-5335e453d917-0.mp4
+2025-11-26 00:32:30,046 - INFO - 🔍 Sahne tespiti: grok-video-5f50f13b-8bed-4961-a679-9ca4ee18590b.mp4
+2025-11-26 00:32:30,125 - INFO - 🔍 Sahne tespiti: grok-video-2d6c0f8c-8ee2-4815-b7a0-81019d2cff43.mp4
+2025-11-26 00:32:30,209 - INFO - 🔍 Sahne tespiti: grok-video-1b67c0d8-4910-4994-92fb-5335e453d917-3.mp4
+2025-11-26 00:32:30,299 - INFO - 🔍 Sahne tespiti: grok-video-1f63675b-0d63-41cd-a403-5e0a8b3fec08-3.mp4
+2025-11-26 00:32:30,367 - INFO - 🔍 Sahne tespiti: grok-video-1b67c0d8-4910-4994-92fb-5335e453d917-2.mp4
+2025-11-26 00:32:30,442 - INFO - 🔍 Sahne tespiti: grok-video-2d6c0f8c-8ee2-4815-b7a0-81019d2cff43.mp4
+2025-11-26 00:32:32,095 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:32:32,096 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:32:32,097 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:32:32,098 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:32:32,099 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:32:32,099 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:32:32,100 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:32:32,100 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:32:32,100 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:32:32,101 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 00:32:32,102 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:32:32,102 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:32:32,102 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:32:32,103 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:32:32,104 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:32:32,104 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:32:32,105 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:32:32,105 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:32:32,106 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:32:32,106 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 00:32:33,081 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:32:33,081 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:32:33,081 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:32:33,088 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:32:33,088 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:32:33,089 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:32:33,091 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:32:33,092 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:32:33,092 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:32:33,092 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:32:33,094 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:32:33,094 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:32:33,094 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:32:33,095 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:32:33,097 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:32:33,097 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:32:33,106 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:32:33,106 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:32:33,106 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:32:33,107 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:32:33,107 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:32:33,107 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:32:33,109 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:32:33,109 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:32:33,111 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:32:33,112 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:32:33,112 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:32:33,114 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:32:33,116 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:32:33,116 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:32:33,116 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:32:33,118 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:32:33,395 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:32:33,395 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:32:33,396 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:32:33,397 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:32:33,421 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 00:32:33,421 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 00:32:33,421 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 00:32:33,423 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 00:32:49,411 - INFO - 🎵 Audio duration: 60.19s - Video will be trimmed to match
+2025-11-26 00:32:49,734 - INFO - 🔧 Normalizing video resolution to 1920x1080...
+2025-11-26 00:32:49,734 - INFO - 🚀 Scale: NVENC GPU encoding
+2025-11-26 00:32:54,094 - WARNING - ⚠️ Scale failed (code 3221225477): No output
+2025-11-26 00:32:54,094 - INFO - 🔧 Sample rate conversion: input → 48000Hz
+2025-11-26 00:32:54,094 - INFO - 🔧 Mono→Stereo conversion applied (proper upmixing)
+2025-11-26 00:32:54,094 - INFO - 🎙️ Building humanized audio filters...
+2025-11-26 00:32:54,094 - INFO - ✅ Audio humanization filters built
+2025-11-26 00:32:54,094 - INFO -    Filters: 0 active
+2025-11-26 00:32:54,095 - INFO -    Sample rate: 48000Hz
+2025-11-26 00:32:54,095 - INFO - 🔊 Volume boost: 1.04x (clipping-safe)
+2025-11-26 00:32:54,095 - INFO - 🎬 Output duration limited to 62.19s (audio + 2s buffer)
+2025-11-26 00:32:58,311 - INFO - ✅ Final encoding başarılı
+2025-11-26 00:32:59,071 - INFO - Temp klasör silindi: 12 dosya
+2025-11-26 00:32:59,071 - INFO - 
+====================================================================================================
+2025-11-26 00:32:59,072 - INFO - 🚀 YOUTUBE OPTİMİZASYONLARI UYGULANMAYA BAŞLANIYOR
+2025-11-26 00:32:59,072 - INFO - ====================================================================================================
+2025-11-26 00:32:59,072 - INFO - 
+📊 KALITE KONTROLÜ:
+2025-11-26 00:32:59,072 - INFO - 
+🔍 KALİTE KONTROLÜ BAŞLIYOR...
+2025-11-26 00:32:59,072 - INFO -    📹 Video bütünlüğü kontrol ediliyor...
+2025-11-26 00:33:01,010 - INFO -    ⬛ Siyah frame kontrolü...
+2025-11-26 00:33:03,080 - INFO -    🔊 Ses kalitesi kontrol ediliyor...
+2025-11-26 00:33:05,120 - INFO -    📊 Bitrate kontrolü...
+2025-11-26 00:33:05,171 - INFO - 
+📊 KALİTE RAPORU:
+2025-11-26 00:33:05,171 - INFO -    ✅ Başarılı kontroller: 5/5
+2025-11-26 00:33:05,171 - INFO -    📈 Kalite skoru: 100.00%
+2025-11-26 00:33:05,171 - INFO -    💾 Dosya boyutu: 80.3 MB
+2025-11-26 00:33:05,171 - INFO -    ✅ integrity: BAŞARILI
+2025-11-26 00:33:05,172 - INFO -    ✅ black_frames: BAŞARILI
+2025-11-26 00:33:05,172 - INFO -    ✅ audio: BAŞARILI
+2025-11-26 00:33:05,172 - INFO -    ✅ bitrate: BAŞARILI
+2025-11-26 00:33:05,172 - INFO -    ✅ file_size: BAŞARILI
+2025-11-26 00:33:05,172 - INFO - 
+✅ KALİTE KONTROLÜ BAŞARILI! (Skor: 100.00%)
+2025-11-26 00:33:05,173 - INFO - ✅ Kalite kontrolü başarılı! Skor: 100.00%
+2025-11-26 00:33:05,173 - INFO - 
+🏷️  METADATA RANDOMİZASYONU:
+2025-11-26 00:33:05,173 - INFO - 🏷️  Metadata enjekte ediliyor...
+2025-11-26 00:33:05,331 - INFO - ✅ Metadata başarıyla enjekte edildi!
+2025-11-26 00:33:05,336 - INFO - ✅ Metadata başarıyla güncellendi
+2025-11-26 00:33:05,336 - INFO - 
+🔒 VIDEO FİNGERPRİNT:
+2025-11-26 00:33:05,338 - INFO - ✅ Video fingerprint oluşturuldu: 14446dc8d5948b42...
+2025-11-26 00:33:05,338 - INFO - ✅ Fingerprint veritabanına kaydedildi
+2025-11-26 00:33:05,339 - INFO - ✅ Fingerprint: 14446dc8d5948b42...
+2025-11-26 00:33:05,339 - INFO - 
+====================================================================================================
+2025-11-26 00:33:05,339 - INFO - ✅ TÜM OPTİMİZASYONLAR TAMAMLANDI!
+2025-11-26 00:33:05,339 - INFO - ====================================================================================================
+2025-11-26 01:01:31,664 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 01:01:31,665 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 01:01:33,246 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 01:01:33,247 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 01:01:33,247 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 01:01:33,254 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 01:01:33,685 - INFO - ✅ NVIDIA GPU tespit edildi (h264_nvenc)
+2025-11-26 01:01:34,056 - INFO - 🎯 Seçilen encoder: NVIDIA (h264_nvenc)
+2025-11-26 01:01:34,058 - INFO - 📝 Encoding log: C:\render\encoding_params.jsonl
+2025-11-26 01:01:34,058 - INFO - 📝 FFmpeg Humanization encoding log initialized
+2025-11-26 01:01:34,091 - INFO - ✅ 8 video dosyası bulundu
+2025-11-26 01:01:43,938 - ERROR - Whisper veya torch kurulu değil!
+2025-11-26 01:01:43,938 - INFO - 🔍 Sahne tespiti: grok-video-1b67c0d8-4910-4994-92fb-5335e453d917-1.mp4
+2025-11-26 01:01:44,013 - INFO - 🔍 Sahne tespiti: grok-video-1b67c0d8-4910-4994-92fb-5335e453d917-0.mp4
+2025-11-26 01:01:44,084 - INFO - 🔍 Sahne tespiti: grok-video-1b67c0d8-4910-4994-92fb-5335e453d917-0.mp4
+2025-11-26 01:01:44,156 - INFO - 🔍 Sahne tespiti: grok-video-5f50f13b-8bed-4961-a679-9ca4ee18590b.mp4
+2025-11-26 01:01:44,235 - INFO - 🔍 Sahne tespiti: grok-video-6e0cde0f-8cd6-4c61-9b5b-2b7c7742a40d-0.mp4
+2025-11-26 01:01:44,331 - INFO - 🔍 Sahne tespiti: grok-video-2d6c0f8c-8ee2-4815-b7a0-81019d2cff43.mp4
+2025-11-26 01:01:44,409 - INFO - 🔍 Sahne tespiti: grok-video-1f63675b-0d63-41cd-a403-5e0a8b3fec08-3.mp4
+2025-11-26 01:01:44,475 - INFO - 🔍 Sahne tespiti: grok-video-5f50f13b-8bed-4961-a679-9ca4ee18590b.mp4
+2025-11-26 01:01:44,546 - INFO - 🔍 Sahne tespiti: grok-video-1b67c0d8-4910-4994-92fb-5335e453d917-2.mp4
+2025-11-26 01:01:44,620 - INFO - 🔍 Sahne tespiti: grok-video-1b67c0d8-4910-4994-92fb-5335e453d917-3.mp4
+2025-11-26 01:01:44,705 - INFO - 🔍 Sahne tespiti: grok-video-1b67c0d8-4910-4994-92fb-5335e453d917-2.mp4
+2025-11-26 01:01:44,780 - INFO - 🔍 Sahne tespiti: grok-video-2d6c0f8c-8ee2-4815-b7a0-81019d2cff43.mp4
+2025-11-26 01:01:44,857 - INFO - 🔍 Sahne tespiti: grok-video-1f63675b-0d63-41cd-a403-5e0a8b3fec08-3.mp4
+2025-11-26 01:01:45,265 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 01:01:45,265 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 01:01:45,265 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 01:01:45,266 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 01:01:45,266 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 01:01:45,267 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 01:01:45,268 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 01:01:45,269 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 01:01:45,272 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 01:01:45,273 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 01:01:45,283 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 01:01:45,283 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 01:01:45,290 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 01:01:45,290 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 01:01:45,290 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 01:01:45,291 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 01:01:45,296 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 01:01:45,296 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 01:01:45,298 - INFO - ✅ FFmpeg Humanization V2.0 loaded (18 features)
+2025-11-26 01:01:45,298 - INFO - ✅ Audio Humanization V1.0 loaded (ElevenLabs → Real Voice)
+2025-11-26 01:01:46,295 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 01:01:46,295 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 01:01:46,295 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 01:01:46,297 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 01:01:46,302 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 01:01:46,302 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 01:01:46,302 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 01:01:46,304 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 01:01:46,310 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 01:01:46,311 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 01:01:46,311 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 01:01:46,312 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 01:01:46,312 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 01:01:46,312 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 01:01:46,314 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 01:01:46,315 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 01:01:46,317 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 01:01:46,317 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 01:01:46,317 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 01:01:46,318 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 01:01:46,318 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 01:01:46,318 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 01:01:46,320 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 01:01:46,321 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 01:01:46,327 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 01:01:46,327 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 01:01:46,327 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 01:01:46,330 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 01:01:46,330 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 01:01:46,330 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 01:01:46,330 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 01:01:46,332 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 01:01:46,587 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 01:01:46,587 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 01:01:46,587 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 01:01:46,589 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 01:01:46,662 - INFO - ✅ GPU Optimizer V1.0 loaded
+2025-11-26 01:01:46,662 - INFO - ✅ NVENC ready: NVIDIA GeForce RTX 5060 Ti (v10.0)
+2025-11-26 01:01:46,662 - INFO - ✅ Expected speedup: 5-10x faster encoding
+2025-11-26 01:01:46,665 - INFO - ✅ YouTube optimizasyon modülü yüklendi
+2025-11-26 01:01:47,078 - ERROR - 💥 Klip 2 FULL FFmpeg ERROR:
+2025-11-26 01:01:47,079 - ERROR -    Command: ffmpeg -v error -stats -hwaccel cuda -hwaccel_device 0 -i C:\randoms\grok-video-2d6c0f8c-8ee2-4815-b7a0-81019d2cff43.mp4 -vf scale=1920:1080:force_original_aspect_ratio=decrease:flags=bicubic,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,fps=30,gblur=sigma=0.63,eq=brightness=0.013:contrast=0.95,eq=saturation=1.04,curves=all='0/0 0.5/0.12 1/1',colorchannelmixer=rr=0.8:gg=0.9:bb=1.2,scale='trunc(iw*1.016/2)*2:trunc(ih*1.016/2)*2':flags=lanczos,crop='trunc(iw/1.016/2)*2:trunc(ih/1.016/2)*2',rotate=0.16*PI/180:fillcolor=black:bilinear=1,eq=contrast=1.005:saturation=1.02,vignette=PI/6,colorspace=bt709:iall=bt601-6-625:fast=1,format=yuv420p,noise=alls=2:allf=t -af loudnorm=I=-16:TP=-1.5:LRA=11,alimiter=limit=0.95:attack=5:release=50:level=disabled,equalizer=f=8000:t=h:width=4000:g=3,asetrate=44100*0.9883333333333333,aresample=44100 -c:v... (truncated)
+2025-11-26 01:01:47,079 - ERROR -    Stderr (full): [h264_nvenc @ 0000017793132740] OpenEncodeSessionEx failed: incompatible client key (21): (no details)
+[vost#0:0/h264_nvenc @ 00000177931321c0] [enc:h264_nvenc @ 000001779336cf80] Error while opening encoder - maybe incorrect parameters such as bit_rate, rate, width or height.
+[vf#0:0 @ 00000177933d3880] Error sending frames to consumers: Invalid argument
+[vf#0:0 @ 00000177933d3880] Task finished with error code: -22 (Invalid argument)
+[vf#0:0 @ 00000177933d3880] Terminating thread with return code -22 (Invalid argument)
+[vost#0:0/h264_nvenc @ 00000177931321c0] [enc:h264_nvenc @ 000001779336cf80] Could not open encoder before EOF
+[vost#0:0/h264_nvenc @ 00000177931321c0] Task finished with error code: -22 (Invalid argument)
+[vost#0:0/h264_nvenc @ 00000177931321c0] Terminating thread with return code -22 (Invalid argument)
+[out#0/mp4 @ 0000017793118300] Nothing was written into output file, because at least one of its streams received no packets.
+frame=    0 fps=0.0 q=0.0 Lsize=       0KiB time=N/A bitrate=N/A speed=N/A elapsed=0:00:00.38    
+
+2025-11-26 01:01:47,079 - WARNING - ⚠️ Klip 2: GPU encoding hatası (CPU deneniyor...)
+2025-11-26 01:01:58,372 - INFO - ✅ Klip 2: GPU başarısız oldu, CPU ile tamamlandı
+2025-11-26 01:01:59,882 - INFO - 🎵 Audio duration: 60.19s - Video will be trimmed to match
+2025-11-26 01:02:00,248 - INFO - 🔧 Normalizing video resolution to 1920x1080...
+2025-11-26 01:02:00,248 - INFO - 🚀 Scale: NVENC GPU encoding
+2025-11-26 01:02:03,956 - WARNING - ⚠️ Scale failed (code 3221225477): No output
+2025-11-26 01:02:03,956 - INFO - 🔧 Sample rate conversion: input → 48000Hz
+2025-11-26 01:02:03,956 - INFO - 🔧 Mono→Stereo conversion applied (proper upmixing)
+2025-11-26 01:02:03,956 - INFO - 🎙️ Building humanized audio filters...
+2025-11-26 01:02:03,956 - INFO - ✅ Audio humanization filters built
+2025-11-26 01:02:03,956 - INFO -    Filters: 1 active
+2025-11-26 01:02:03,956 - INFO -    Sample rate: 48000Hz
+2025-11-26 01:02:03,957 - INFO - 🎙️ Audio humanization applied (AI → Human voice)
+2025-11-26 01:02:03,957 - INFO - 🔊 Volume boost: 1.02x (clipping-safe)
+2025-11-26 01:02:03,957 - INFO - 🎬 Output duration limited to 62.19s (audio + 2s buffer)
+2025-11-26 01:02:09,358 - INFO - ✅ Final encoding başarılı
+2025-11-26 01:02:10,106 - INFO - Temp klasör silindi: 12 dosya
+2025-11-26 01:02:10,107 - INFO - 
+====================================================================================================
+2025-11-26 01:02:10,107 - INFO - 🚀 YOUTUBE OPTİMİZASYONLARI UYGULANMAYA BAŞLANIYOR
+2025-11-26 01:02:10,107 - INFO - ====================================================================================================
+2025-11-26 01:02:10,107 - INFO - 
+📊 KALITE KONTROLÜ:
+2025-11-26 01:02:10,107 - INFO - 
+🔍 KALİTE KONTROLÜ BAŞLIYOR...
+2025-11-26 01:02:10,107 - INFO -    📹 Video bütünlüğü kontrol ediliyor...
+2025-11-26 01:02:12,092 - INFO -    ⬛ Siyah frame kontrolü...
+2025-11-26 01:02:14,245 - INFO -    🔊 Ses kalitesi kontrol ediliyor...
+2025-11-26 01:02:16,141 - INFO -    📊 Bitrate kontrolü...
+2025-11-26 01:02:16,183 - INFO - 
+📊 KALİTE RAPORU:
+2025-11-26 01:02:16,183 - INFO -    ✅ Başarılı kontroller: 5/5
+2025-11-26 01:02:16,183 - INFO -    📈 Kalite skoru: 100.00%
+2025-11-26 01:02:16,183 - INFO -    💾 Dosya boyutu: 77.0 MB
+2025-11-26 01:02:16,183 - INFO -    ✅ integrity: BAŞARILI
+2025-11-26 01:02:16,183 - INFO -    ✅ black_frames: BAŞARILI
+2025-11-26 01:02:16,183 - INFO -    ✅ audio: BAŞARILI
+2025-11-26 01:02:16,183 - INFO -    ✅ bitrate: BAŞARILI
+2025-11-26 01:02:16,183 - INFO -    ✅ file_size: BAŞARILI
+2025-11-26 01:02:16,183 - INFO - 
+✅ KALİTE KONTROLÜ BAŞARILI! (Skor: 100.00%)
+2025-11-26 01:02:16,183 - INFO - ✅ Kalite kontrolü başarılı! Skor: 100.00%
+2025-11-26 01:02:16,184 - INFO - 
+🏷️  METADATA RANDOMİZASYONU:
+2025-11-26 01:02:16,184 - INFO - 🏷️  Metadata enjekte ediliyor...
+2025-11-26 01:02:16,333 - INFO - ✅ Metadata başarıyla enjekte edildi!
+2025-11-26 01:02:16,337 - INFO - ✅ Metadata başarıyla güncellendi
+2025-11-26 01:02:16,337 - INFO - 
+🔒 VIDEO FİNGERPRİNT:
+2025-11-26 01:02:16,343 - INFO - ✅ Video fingerprint oluşturuldu: abeb758df8634360...
+2025-11-26 01:02:16,350 - INFO - ✅ Fingerprint veritabanına kaydedildi
+2025-11-26 01:02:16,350 - INFO - ✅ Fingerprint: abeb758df8634360...
+2025-11-26 01:02:16,350 - INFO - 
+====================================================================================================
+2025-11-26 01:02:16,350 - INFO - ✅ TÜM OPTİMİZASYONLAR TAMAMLANDI!
+2025-11-26 01:02:16,350 - INFO - ====================================================================================================
