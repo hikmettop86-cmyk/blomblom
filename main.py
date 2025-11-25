@@ -4933,6 +4933,14 @@ def klip_isle_parallel(args):
     """🆕 Tek bir klibi işle + CAPCUT PLUS EFFECTS + 🌟 STORY FEATURES"""
     item, klip_index, encoder_type, encoder_config, temp_klasor, sessiz_yap, subtitle_config, secilen_efektler, cumulative_time = args
 
+    # ✅ Parallel worker güvenliği: temp klasörü kontrol et ve oluştur
+    # ProcessPoolExecutor ile Windows'ta race condition olabiliyor
+    if not os.path.exists(temp_klasor):
+        try:
+            os.makedirs(temp_klasor, exist_ok=True)
+        except Exception as e:
+            logger.warning(f"⚠️ Temp klasör oluşturma hatası (worker {klip_index}): {e}")
+
     klip_dosya = os.path.join(temp_klasor, f"c_{klip_index:05d}.mp4")
 
     fp_params = fingerprint_parametreleri_olustur(klip_index)
@@ -5356,6 +5364,11 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
     Args:
         secilen_efektler: Kullanıcının seçtiği efektler (set) veya None (tüm efektler)
     """
+    # ✅ Güvenlik: temp klasörünün var olduğundan emin ol
+    if not os.path.exists(temp_klasor):
+        os.makedirs(temp_klasor, exist_ok=True)
+        logger.info(f"📁 Temp klasör oluşturuldu: {temp_klasor}")
+
     print(f"\n🚀 Rendering başlıyor...")
 
     # Encoder info (tek satır)
