@@ -5591,11 +5591,37 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
         scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
+        # ✅ NVENC Access Violation (3221225477) durumunda CPU fallback
+        nvenc_failed = False
         if scale_sonuc.returncode != 0 or not dosya_gecerli_mi(temp_scaled):
             error_msg = scale_sonuc.stderr[:300] if scale_sonuc.stderr else scale_sonuc.stdout[:300] if scale_sonuc.stdout else "No output"
             logger.warning(f"⚠️ Scale failed (code {scale_sonuc.returncode}): {error_msg}")
-            logger.debug(f"Scale command: {' '.join(scale_komut[:10])}...")
-            temp_scaled = temp_video  # Fallback
+
+            # NVENC crash (Access Violation) → CPU ile tekrar dene
+            if scale_sonuc.returncode == 3221225477 and encoder_type == 'nvidia':
+                logger.info("🔄 NVENC crashed, retrying scale with CPU...")
+                nvenc_failed = True
+                scale_komut_cpu = [
+                    'ffmpeg', '-v', 'warning',
+                    '-i', temp_video,
+                    '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
+                    '-c:v', 'libx264',
+                    '-preset', 'fast',
+                    '-crf', '18',
+                    '-pix_fmt', 'yuv420p',
+                    '-an',
+                    '-y', temp_scaled
+                ]
+                scale_sonuc = subprocess.run(scale_komut_cpu, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if scale_sonuc.returncode == 0 and dosya_gecerli_mi(temp_scaled):
+                    logger.info("✅ Video normalized to 1920x1080 (CPU fallback)")
+                    temp_video = temp_scaled
+                else:
+                    logger.warning("⚠️ CPU fallback also failed, using original video")
+                    temp_scaled = temp_video
+            else:
+                logger.debug(f"Scale command: {' '.join(scale_komut[:10])}...")
+                temp_scaled = temp_video  # Fallback
         else:
             logger.info("✅ Video normalized to 1920x1080")
             temp_video = temp_scaled  # Use scaled version
@@ -5674,14 +5700,18 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
             print(f"   📝 Alt yazılar ekleniyor: {os.path.basename(ass_file)}")
 
+            # ✅ FFmpeg subtitles filter path escaping for Windows
+            # FFmpeg needs: colon → \\: (escaped colon in filter syntax)
+            # Python '\\\\:' → literal '\\:' → FFmpeg interprets as escaped colon
             import re
             if re.match(r'^[A-Za-z]:', ass_path):
-                ass_path_escaped = ass_path.replace(':', '\\:', 1)
+                ass_path_escaped = ass_path.replace(':', '\\\\:', 1)
             else:
                 ass_path_escaped = ass_path
 
             # Subtitle encoding için GPU - klip encoding ile aynı parametreler
-            if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
+            # ✅ nvenc_failed durumunda CPU kullan (scale'de crash olduysa)
+            if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia' and not nvenc_failed:
                 nv_settings = QUALITY_SETTINGS['nvidia']
                 print(f"   🚀 NVENC GPU altyazı encoding")
                 komut.extend([
@@ -5696,7 +5726,10 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                     '-pix_fmt', 'yuv420p',
                 ])
             else:
-                print(f"   📝 CPU altyazı encoding")
+                if nvenc_failed:
+                    print(f"   📝 CPU altyazı encoding (NVENC fallback)")
+                else:
+                    print(f"   📝 CPU altyazı encoding")
                 komut.extend([
                     '-vf', f"subtitles='{ass_path_escaped}'",
                     '-c:v', 'libx264',
@@ -5729,8 +5762,56 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
         if sonuc.returncode != 0:
             error_msg = sonuc.stderr[:500] if sonuc.stderr else sonuc.stdout[:500] if sonuc.stdout else "No FFmpeg output"
             logger.error(f"Encoding hatası (code {sonuc.returncode}): {error_msg}")
-            logger.error(f"FFmpeg command: {' '.join(komut[:15])}...")
-            return False, f"Ses+altyazı birleştirme hatası: {error_msg}"
+
+            # ✅ NVENC crash → CPU fallback retry
+            if sonuc.returncode == 3221225477 and encoder_type == 'nvidia' and not nvenc_failed:
+                logger.info("🔄 NVENC crashed during final encode, retrying with CPU...")
+
+                # Rebuild command with CPU encoder
+                komut_cpu = [
+                    'ffmpeg', '-v', 'warning',
+                    '-i', temp_video,
+                    '-i', ses_dosyasi,
+                    '-map', '0:v',
+                    '-map', '1:a',
+                ]
+
+                if subtitle_config and subtitle_config.get('srt_file'):
+                    komut_cpu.extend([
+                        '-vf', f"subtitles='{ass_path_escaped}'",
+                        '-c:v', 'libx264',
+                        '-preset', 'fast',
+                        '-crf', '18',
+                        '-pix_fmt', 'yuv420p',
+                    ])
+                else:
+                    komut_cpu.extend(['-c:v', 'copy'])
+
+                if ses_suresi:
+                    komut_cpu.extend(['-t', str(ses_suresi + 2)])
+
+                komut_cpu.extend([
+                    '-c:a', audio_cfg['codec'],
+                    '-b:a', audio_cfg['bitrate'],
+                    '-ar', audio_cfg['sample_rate'],
+                    '-ac', str(audio_cfg['channels']),
+                    '-af', audio_filtre_str,
+                    '-movflags', '+faststart',
+                    '-y', cikti_yolu
+                ])
+
+                print(f"   🔄 CPU ile tekrar deneniyor...")
+                sonuc = subprocess.run(komut_cpu, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+                if sonuc.returncode == 0:
+                    logger.info(f"✅ Final encoding başarılı (CPU fallback)")
+                else:
+                    error_msg = sonuc.stderr[:500] if sonuc.stderr else "No FFmpeg output"
+                    logger.error(f"CPU fallback da başarısız (code {sonuc.returncode}): {error_msg}")
+                    return False, f"Ses+altyazı birleştirme hatası: {error_msg}"
+            else:
+                logger.error(f"FFmpeg command: {' '.join(komut[:15])}...")
+                return False, f"Ses+altyazı birleştirme hatası: {error_msg}"
 
         logger.info(f"✅ Final encoding başarılı")
 
@@ -5766,9 +5847,10 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             ass_file = subtitle_config['srt_file']
             ass_path = ass_file.replace('\\', '/')
 
+            # ✅ FFmpeg subtitles filter path escaping for Windows
             import re
             if re.match(r'^[A-Za-z]:', ass_path):
-                ass_path_escaped = ass_path.replace(':', '\\:', 1)
+                ass_path_escaped = ass_path.replace(':', '\\\\:', 1)
             else:
                 ass_path_escaped = ass_path
 
