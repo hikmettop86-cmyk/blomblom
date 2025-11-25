@@ -240,21 +240,32 @@ def gpu_durumunu_tespit_et():
                                          text=True,
                                          timeout=3)
             if 'h264_nvenc' in test_result.stdout:
-                try:
-                    test_encode = [
-                        'ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=1:size=1280x720:rate=1',
-                        '-c:v', 'h264_nvenc', '-preset', 'fast', '-t', '1',
-                        '-f', 'null', '-'
-                    ]
-                    test_result = subprocess.run(test_encode,
-                                                 stdout=subprocess.PIPE,
-                                                 stderr=subprocess.PIPE,
-                                                 timeout=10)
-                    if test_result.returncode == 0:
-                        available.append(('nvidia', gpu_encoders['nvidia']))
-                        logger.info("✅ NVIDIA GPU tespit edildi (h264_nvenc)")
-                except Exception as e:
-                    logger.warning(f"⚠️  NVIDIA GPU var ama encoder test edilemedi")
+                # RTX 50 serisi yeni preset (p1-p7), eski GPU'lar eski preset (fast/medium)
+                # Her ikisini de dene
+                presets_to_try = ['p4', 'p5', 'fast', 'medium']  # Yeni presetler önce
+                nvenc_working = False
+
+                for test_preset in presets_to_try:
+                    try:
+                        test_encode = [
+                            'ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=1:size=256x256:rate=1',
+                            '-c:v', 'h264_nvenc', '-preset', test_preset, '-t', '0.5',
+                            '-f', 'null', '-'
+                        ]
+                        test_result = subprocess.run(test_encode,
+                                                     stdout=subprocess.PIPE,
+                                                     stderr=subprocess.PIPE,
+                                                     timeout=10)
+                        if test_result.returncode == 0:
+                            available.append(('nvidia', gpu_encoders['nvidia']))
+                            logger.info(f"✅ NVIDIA GPU tespit edildi (h264_nvenc, preset: {test_preset})")
+                            nvenc_working = True
+                            break
+                    except Exception as e:
+                        continue
+
+                if not nvenc_working:
+                    logger.warning(f"⚠️  NVIDIA GPU var ama NVENC encoder test edilemedi (FFmpeg güncellemesi gerekebilir)")
     except:
         pass
 

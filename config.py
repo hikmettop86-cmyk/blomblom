@@ -50,14 +50,20 @@ QUALITY_SETTINGS = {
         'bufsize': '10M',  # 16M→10M (2x target)
     },
     'nvidia': {
-        'preset': 'p4',  # RTX 50 serisi için yeni preset adı (p1-p7)
+        # ✅ RTX 5060 Ti (Blackwell) için optimize edildi
+        'preset': 'p4',  # p1-p7 (p4=balanced speed/quality, RTX 50 için optimal)
         'cq': 23,  # CQ=23 (CRF benzeri, daha küçük dosya)
         'bitrate': '5M',  # 8M→5M
         'maxrate': '8M',  # 12M→8M
         'bufsize': '10M',  # 16M→10M
-        'rc': 'vbr',  # vbr_hq → vbr (RTX 50 uyumlu)
+        'rc': 'vbr',  # Variable Bitrate (RTX 50 için uyumlu)
         'profile': 'high',
-        'level': '5.1',  # RTX 5060 Ti için yükseltildi (4.1→5.1)
+        'level': None,  # ✅ None = auto-detect (Invalid Level hatası önlenir)
+        # RTX 50 özel ayarlar:
+        'spatial_aq': 1,  # Spatial Adaptive Quantization (kalite artışı)
+        'temporal_aq': 1,  # Temporal AQ (RTX 50 güçlü, kullan)
+        'lookahead': 16,  # Frame lookahead (kalite artışı)
+        'b_ref_mode': 'middle',  # B-frame reference mode (kalite)
     },
     'amd': {
         'quality': 'quality',
@@ -149,9 +155,9 @@ QUALITY_OPTIMIZER_CONFIG = {
 # - Tüm özellikler: %100 korunuyor
 #
 # Requires:
-# - NVIDIA GPU (GTX 10xx/16xx/RTX 20xx/30xx/40xx)
-# - FFmpeg with NVENC support
-# - NVIDIA drivers installed
+# - NVIDIA GPU (GTX 10xx/16xx/RTX 20xx/30xx/40xx/50xx) ✅ RTX 5060 Ti destekleniyor!
+# - FFmpeg with NVENC support (güncel sürüm önerilir)
+# - NVIDIA drivers installed (RTX 50 için 565+ sürücü gerekli)
 #
 GPU_ENCODING_CONFIG = {
     # Enable/disable GPU encoding
@@ -159,10 +165,15 @@ GPU_ENCODING_CONFIG = {
     # Eğer test başarısız olursa otomatik CPU'ya geçer
     'enabled': True,  # True = use GPU if available, False = always use CPU
 
+    # ⚠️ RTX 5060 Ti (Blackwell) için önemli:
+    # - FFmpeg'in güncel olması gerekiyor (BtbN builds önerilir)
+    # - Yeni presetler: p1-p7 (p1=hızlı, p7=kaliteli)
+    # - Eski presetler (fast/medium) çalışmayabilir
+
     # Quality mode: 'speed', 'balanced', 'quality'
-    # - speed: ~10x faster, very good quality (preset p3, cq 21)
-    # - balanced: ~7x faster, excellent quality (preset p5, cq 18) ⭐ RECOMMENDED
-    # - quality: ~5x faster, pristine quality (preset p7, cq 15)
+    # - speed: ~10-15x faster, good quality (preset p3, cq 23) - RTX 50 ile çok hızlı!
+    # - balanced: ~8-10x faster, excellent quality (preset p4, cq 21) ⭐ RECOMMENDED
+    # - quality: ~6-8x faster, pristine quality (preset p6, cq 18)
     'quality_mode': 'balanced',
 
     # GPU selection (0 = first GPU, 1 = second GPU, etc.)
@@ -334,24 +345,25 @@ FINGERPRINT_CONFIG = {
     # PHASE 2: HIGH PRIORITY FEATURES (Week 2)
 
     # #6: Hardware Encoder Rotation
+    # ⚠️ DÜZELTİLDİ: RTX 5060 Ti için GPU öncelikli (%90 GPU kullanımı)
     'hardware_encoder': {
         'enabled': True,
         'auto_detect': True,  # GPU availability check
         'encoders': {
             'libx264': {
-                'weight': 0.60,
+                'weight': 0.10,  # ✅ %60 → %10 (GPU varsa CPU neredeyse hiç kullanılmasın)
                 'type': 'software',
             },
             'h264_nvenc': {
-                'weight': 0.25,
+                'weight': 0.85,  # ✅ %25 → %85 (RTX 5060 Ti için maksimum GPU kullanımı)
                 'type': 'hardware',
             },
             'h264_qsv': {
-                'weight': 0.10,
+                'weight': 0.03,  # Intel backup
                 'type': 'hardware',
             },
             'h264_amf': {
-                'weight': 0.05,
+                'weight': 0.02,  # AMD backup
                 'type': 'hardware',
             }
         }

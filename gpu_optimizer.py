@@ -364,8 +364,9 @@ def detect_nvenc_support(gpu_id: int = 0) -> Dict[str, Any]:
             # Create a minimal test: generate 1 frame and encode with NVENC
             test_output = tempfile.mktemp(suffix='.mp4')
 
-            # Try with legacy preset first (more compatible), then new preset
-            presets_to_try = ['medium', 'fast', 'p4', 'p5']  # Legacy first, then new
+            # ✅ RTX 50 serisi için yeni presetler önce (p1-p7), sonra legacy
+            # RTX 5060 Ti gibi yeni GPU'lar p1-p7 kullanır, eski GPU'lar medium/fast
+            presets_to_try = ['p4', 'p5', 'p3', 'medium', 'fast']  # Yeni presetler önce!
             nvenc_works = False
             working_preset_style = 'legacy'  # 'legacy' or 'new'
 
