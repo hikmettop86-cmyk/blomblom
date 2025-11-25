@@ -341,23 +341,36 @@ def detect_available_encoders():
         # NVIDIA GPU check - RTX 50 serisi için yeni preset formatı (p1-p7)
         if 'h264_nvenc' in result.stdout:
             # Yeni presetler önce (RTX 50), sonra legacy (GTX 10xx/16xx/RTX 20xx/30xx/40xx)
-            presets_to_try = ['p4', 'p5', 'fast', 'medium']
+            presets_to_try = ['p4', 'p5', 'p3', 'fast', 'medium']
             nvenc_working = False
 
             for test_preset in presets_to_try:
                 try:
+                    # ✅ DÜZELTİLDİ: capture_output ve stderr=DEVNULL birlikte kullanılamaz!
                     test = subprocess.run(
-                        ['ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
-                         '-c:v', 'h264_nvenc', '-preset', test_preset, '-t', '0.5',
-                         '-f', 'null', '-'],
-                        capture_output=True, stderr=subprocess.DEVNULL, timeout=10
+                        ['ffmpeg', '-y', '-v', 'error',
+                         '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
+                         '-c:v', 'h264_nvenc', '-preset', test_preset,
+                         '-t', '0.5', '-f', 'null', '-'],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.PIPE,
+                        timeout=15
                     )
                     if test.returncode == 0:
                         available['h264_nvenc'] = True
                         logger.info(f"✅ h264_nvenc available (preset: {test_preset})")
                         nvenc_working = True
                         break
-                except:
+                    else:
+                        # Log error for debugging
+                        stderr_text = test.stderr.decode('utf-8', errors='ignore') if test.stderr else ''
+                        if stderr_text:
+                            logger.debug(f"NVENC test failed (preset={test_preset}): {stderr_text[:200]}")
+                except subprocess.TimeoutExpired:
+                    logger.debug(f"NVENC test timeout (preset={test_preset})")
+                    continue
+                except Exception as e:
+                    logger.debug(f"NVENC test error (preset={test_preset}): {e}")
                     continue
 
             if not nvenc_working:
@@ -365,23 +378,37 @@ def detect_available_encoders():
 
         # Intel QSV check
         if 'h264_qsv' in result.stdout:
-            test = subprocess.run(
-                ['ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
-                 '-c:v', 'h264_qsv', '-t', '0.5', '-f', 'null', '-'],
-                capture_output=True, stderr=subprocess.DEVNULL, timeout=10
-            )
-            if test.returncode == 0:
-                available['h264_qsv'] = True
+            try:
+                test = subprocess.run(
+                    ['ffmpeg', '-y', '-v', 'error',
+                     '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
+                     '-c:v', 'h264_qsv', '-t', '0.5', '-f', 'null', '-'],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=10
+                )
+                if test.returncode == 0:
+                    available['h264_qsv'] = True
+                    logger.info("✅ h264_qsv available")
+            except:
+                pass
 
         # AMD AMF check
         if 'h264_amf' in result.stdout:
-            test = subprocess.run(
-                ['ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
-                 '-c:v', 'h264_amf', '-t', '0.5', '-f', 'null', '-'],
-                capture_output=True, stderr=subprocess.DEVNULL, timeout=10
-            )
-            if test.returncode == 0:
-                available['h264_amf'] = True
+            try:
+                test = subprocess.run(
+                    ['ffmpeg', '-y', '-v', 'error',
+                     '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
+                     '-c:v', 'h264_amf', '-t', '0.5', '-f', 'null', '-'],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=10
+                )
+                if test.returncode == 0:
+                    available['h264_amf'] = True
+                    logger.info("✅ h264_amf available")
+            except:
+                pass
 
     except Exception as e:
         logger.debug(f"Encoder detection error: {e}")
