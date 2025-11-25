@@ -5703,9 +5703,9 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
             print(f"   📝 Alt yazılar ekleniyor: {os.path.basename(ass_file)}")
 
-            # ✅ FFmpeg subtitles filter - Windows path escaping
-            # Colon'u escape et: C:/path → C\:/path
-            ass_path_escaped = ass_path.replace(':', '\\:')
+            # ✅ FFmpeg subtitles filter - Windows path
+            # Double quote ile path koruma (colon escape çalışmadı)
+            ass_path_escaped = f'"{ass_path}"'
 
             # Subtitle encoding için GPU - klip encoding ile aynı parametreler
             # ✅ nvenc_failed durumunda CPU kullan (scale'de crash olduysa)
@@ -5713,7 +5713,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 nv_settings = QUALITY_SETTINGS['nvidia']
                 print(f"   🚀 NVENC GPU altyazı encoding")
                 komut.extend([
-                    '-vf', f"subtitles={ass_path_escaped}",
+                    '-vf', f'subtitles={ass_path_escaped}',
                     '-c:v', 'h264_nvenc',
                     '-preset', nv_settings['preset'],
                     '-rc', nv_settings['rc'],
@@ -5729,7 +5729,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 else:
                     print(f"   📝 CPU altyazı encoding")
                 komut.extend([
-                    '-vf', f"subtitles={ass_path_escaped}",
+                    '-vf', f'subtitles={ass_path_escaped}',
                     '-c:v', 'libx264',
                     '-preset', 'fast',
                     '-crf', '18',
@@ -5776,7 +5776,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
                 if subtitle_config and subtitle_config.get('srt_file'):
                     komut_cpu.extend([
-                        '-vf', f"subtitles={ass_path_escaped}",
+                        '-vf', f'subtitles={ass_path_escaped}',
                         '-c:v', 'libx264',
                         '-preset', 'fast',
                         '-crf', '18',
@@ -5845,13 +5845,13 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             ass_file = subtitle_config['srt_file']
             ass_path = ass_file.replace('\\', '/')
 
-            # ✅ FFmpeg subtitles filter - Windows path escaping
-            ass_path_escaped = ass_path.replace(':', '\\:')
+            # ✅ FFmpeg subtitles filter - Windows path
+            ass_path_escaped = f'"{ass_path}"'
 
             komut = [
                 'ffmpeg', '-v', 'warning',
                 '-i', temp_merged,
-                '-vf', f"subtitles={ass_path_escaped}",
+                '-vf', f'subtitles={ass_path_escaped}',
                 '-c:v', 'libx264',
                 '-preset', 'fast',
                 '-crf', '18',
