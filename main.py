@@ -5159,7 +5159,7 @@ def klip_isle_parallel(args):
                                     'bitrate': nv_settings.get('bitrate', '12M'),
                                     'maxrate': nv_settings.get('maxrate', '15M'),
                                     'profile': nv_settings.get('profile', 'high'),
-                                    'level': nv_settings.get('level', '4.1'),
+                                    'level': nv_settings.get('level'),  # ✅ None = auto-detect (RTX 50 için)
                                     'keyint': fp_params['gop_size'],
                                     'bframes': fp_params['bframes'],
                                     'refs': 3,
@@ -5188,7 +5188,7 @@ def klip_isle_parallel(args):
                                 logger.warning(f"⚠️ GPU Optimizer failed, using legacy NVENC: {e}")
                                 # Fallback to legacy NVENC
                                 nv_settings = QUALITY_SETTINGS['nvidia']
-                                komut.extend([
+                                nvenc_cmd = [
                                     '-c:v', 'h264_nvenc',
                                     '-preset', nv_settings['preset'],
                                     '-rc', nv_settings['rc'],
@@ -5196,7 +5196,11 @@ def klip_isle_parallel(args):
                                     '-maxrate', nv_settings['maxrate'],
                                     '-bufsize', nv_settings['bufsize'],
                                     '-profile:v', nv_settings['profile'],
-                                    '-level', nv_settings['level'],
+                                ]
+                                # ✅ Level sadece None değilse ekle (RTX 50 auto-detect)
+                                if nv_settings.get('level') is not None:
+                                    nvenc_cmd.extend(['-level', str(nv_settings['level'])])
+                                nvenc_cmd.extend([
                                     '-spatial-aq', '1',
                                     '-temporal-aq', '1',
                                     '-rc-lookahead', '16',
@@ -5207,10 +5211,11 @@ def klip_isle_parallel(args):
                                     '-g', str(fp_params['gop_size']),
                                     '-bf', str(fp_params['bframes']),
                                 ])
+                                komut.extend(nvenc_cmd)
                         else:
                             # Legacy NVENC (GPU Optimizer not available)
                             nv_settings = QUALITY_SETTINGS['nvidia']
-                            komut.extend([
+                            nvenc_cmd = [
                                 '-c:v', 'h264_nvenc',
                                 '-preset', nv_settings['preset'],
                                 '-rc', nv_settings['rc'],
@@ -5218,7 +5223,11 @@ def klip_isle_parallel(args):
                                 '-maxrate', nv_settings['maxrate'],
                                 '-bufsize', nv_settings['bufsize'],
                                 '-profile:v', nv_settings['profile'],
-                                '-level', nv_settings['level'],
+                            ]
+                            # ✅ Level sadece None değilse ekle (RTX 50 auto-detect)
+                            if nv_settings.get('level') is not None:
+                                nvenc_cmd.extend(['-level', str(nv_settings['level'])])
+                            nvenc_cmd.extend([
                                 '-spatial-aq', '1',
                                 '-temporal-aq', '1',
                                 '-rc-lookahead', '16',
@@ -5229,6 +5238,7 @@ def klip_isle_parallel(args):
                                 '-g', str(fp_params['gop_size']),
                                 '-bf', str(fp_params['bframes']),
                             ])
+                            komut.extend(nvenc_cmd)
                     elif current_encoder_type == 'amd':
                         amd_settings = QUALITY_SETTINGS['amd']
                         komut.extend([

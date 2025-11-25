@@ -324,6 +324,7 @@ def build_rate_control_params(video_path=None):
 def detect_available_encoders():
     """
     Detect available hardware encoders on the system
+    ✅ RTX 50 serisi (Blackwell) için güncellenmiş test
 
     Returns:
         dict: Available encoders {encoder_name: bool}
@@ -337,21 +338,36 @@ def detect_available_encoders():
             capture_output=True, text=True, timeout=5
         )
 
-        # NVIDIA GPU check
+        # NVIDIA GPU check - RTX 50 serisi için yeni preset formatı (p1-p7)
         if 'h264_nvenc' in result.stdout:
-            test = subprocess.run(
-                ['ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=1:size=640x480',
-                 '-c:v', 'h264_nvenc', '-f', 'null', '-'],
-                capture_output=True, stderr=subprocess.DEVNULL, timeout=10
-            )
-            if test.returncode == 0:
-                available['h264_nvenc'] = True
+            # Yeni presetler önce (RTX 50), sonra legacy (GTX 10xx/16xx/RTX 20xx/30xx/40xx)
+            presets_to_try = ['p4', 'p5', 'fast', 'medium']
+            nvenc_working = False
+
+            for test_preset in presets_to_try:
+                try:
+                    test = subprocess.run(
+                        ['ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
+                         '-c:v', 'h264_nvenc', '-preset', test_preset, '-t', '0.5',
+                         '-f', 'null', '-'],
+                        capture_output=True, stderr=subprocess.DEVNULL, timeout=10
+                    )
+                    if test.returncode == 0:
+                        available['h264_nvenc'] = True
+                        logger.info(f"✅ h264_nvenc available (preset: {test_preset})")
+                        nvenc_working = True
+                        break
+                except:
+                    continue
+
+            if not nvenc_working:
+                logger.warning("⚠️ h264_nvenc test failed - FFmpeg may need update for RTX 50 series")
 
         # Intel QSV check
         if 'h264_qsv' in result.stdout:
             test = subprocess.run(
-                ['ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=1:size=640x480',
-                 '-c:v', 'h264_qsv', '-f', 'null', '-'],
+                ['ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
+                 '-c:v', 'h264_qsv', '-t', '0.5', '-f', 'null', '-'],
                 capture_output=True, stderr=subprocess.DEVNULL, timeout=10
             )
             if test.returncode == 0:
@@ -360,8 +376,8 @@ def detect_available_encoders():
         # AMD AMF check
         if 'h264_amf' in result.stdout:
             test = subprocess.run(
-                ['ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=1:size=640x480',
-                 '-c:v', 'h264_amf', '-f', 'null', '-'],
+                ['ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
+                 '-c:v', 'h264_amf', '-t', '0.5', '-f', 'null', '-'],
                 capture_output=True, stderr=subprocess.DEVNULL, timeout=10
             )
             if test.returncode == 0:
@@ -380,17 +396,20 @@ def select_encoder():
     Software vs hardware macroblock decision patterns have 99% detection accuracy.
     Encoder rotation makes pattern impossible to predict.
 
+    ✅ RTX 5060 Ti için GPU öncelikli (%85 NVENC)
+
     Returns:
         tuple: (encoder_name, encoder_config)
     """
+    # ✅ DÜZELTİLDİ: Fallback değerleri GPU öncelikli yapıldı
     config = FINGERPRINT_CONFIG.get('hardware_encoder', {
         'enabled': True,
         'auto_detect': True,
         'encoders': {
-            'libx264': {'weight': 0.60, 'type': 'software'},
-            'h264_nvenc': {'weight': 0.25, 'type': 'hardware'},
-            'h264_qsv': {'weight': 0.10, 'type': 'hardware'},
-            'h264_amf': {'weight': 0.05, 'type': 'hardware'},
+            'libx264': {'weight': 0.10, 'type': 'software'},      # %60 → %10
+            'h264_nvenc': {'weight': 0.85, 'type': 'hardware'},   # %25 → %85
+            'h264_qsv': {'weight': 0.03, 'type': 'hardware'},
+            'h264_amf': {'weight': 0.02, 'type': 'hardware'},
         }
     })
 
