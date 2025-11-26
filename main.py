@@ -5040,9 +5040,11 @@ def klip_isle_parallel(args):
                 # ===== CPU DECODE + GPU ENCODE =====
                 # hwaccel cuda KALDIRILDI: Küçük dosyalarda GPU↔CPU transfer overhead
                 # CPU decode (hızlı) → CPU filters → GPU encode (hızlı)
-                komut = ['ffmpeg', '-v', 'error', '-stats', '-i', item['dosya']]
+                komut = ['ffmpeg', '-v', 'error', '-stats',
+                         '-filter_threads', '8',  # ✅ Multithread filter işleme
+                         '-i', item['dosya']]
                 if klip_index == 1 and current_encoder_type == 'nvidia':
-                    logger.debug(f"🚀 CPU decode → CPU filters → NVENC encode")
+                    logger.debug(f"🚀 CPU decode → CPU filters (8 threads) → NVENC encode")
 
                 if final_video_filtre:
                     komut.extend(['-vf', final_video_filtre])
@@ -5235,15 +5237,17 @@ def klip_isle_parallel(args):
                                 if nv_settings.get('level') is not None:
                                     nvenc_cmd.extend(['-level', str(nv_settings['level'])])
                                 nvenc_cmd.extend([
-                                    '-spatial-aq', '1',
-                                    '-temporal-aq', '1',
-                                    '-rc-lookahead', '16',
+                                    '-spatial-aq', str(nv_settings.get('spatial_aq', 1)),
+                                    '-temporal-aq', str(nv_settings.get('temporal_aq', 1)),
+                                    '-aq-strength', str(nv_settings.get('aq_strength', 8)),
+                                    '-rc-lookahead', str(nv_settings.get('lookahead', 32)),
+                                    '-b_ref_mode', nv_settings.get('b_ref_mode', 'middle'),
                                     '-colorspace', 'bt709',
                                     '-color_primaries', 'bt709',
                                     '-color_trc', 'bt709',
                                     '-color_range', VIDEO_OUTPUT['color_range'],
-                                    '-g', str(fp_params['gop_size']),
-                                    '-bf', str(fp_params['bframes']),
+                                    '-g', str(nv_settings.get('g', 60)),
+                                    '-bf', str(nv_settings.get('bf', 3)),
                                 ])
                                 komut.extend(nvenc_cmd)
                         else:
@@ -5262,15 +5266,17 @@ def klip_isle_parallel(args):
                             if nv_settings.get('level') is not None:
                                 nvenc_cmd.extend(['-level', str(nv_settings['level'])])
                             nvenc_cmd.extend([
-                                '-spatial-aq', '1',
-                                '-temporal-aq', '1',
-                                '-rc-lookahead', '16',
+                                '-spatial-aq', str(nv_settings.get('spatial_aq', 1)),
+                                '-temporal-aq', str(nv_settings.get('temporal_aq', 1)),
+                                '-aq-strength', str(nv_settings.get('aq_strength', 8)),
+                                '-rc-lookahead', str(nv_settings.get('lookahead', 32)),
+                                '-b_ref_mode', nv_settings.get('b_ref_mode', 'middle'),
                                 '-colorspace', 'bt709',
                                 '-color_primaries', 'bt709',
                                 '-color_trc', 'bt709',
                                 '-color_range', VIDEO_OUTPUT['color_range'],
-                                '-g', str(fp_params['gop_size']),
-                                '-bf', str(fp_params['bframes']),
+                                '-g', str(nv_settings.get('g', 60)),
+                                '-bf', str(nv_settings.get('bf', 3)),
                             ])
                             komut.extend(nvenc_cmd)
                     elif current_encoder_type == 'amd':

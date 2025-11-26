@@ -77,8 +77,11 @@ QUALITY_SETTINGS = {
         # RTX 50 özel ayarlar:
         'spatial_aq': 1,  # Spatial Adaptive Quantization (kalite artışı)
         'temporal_aq': 1,  # Temporal AQ (RTX 50 güçlü, kullan)
-        'lookahead': 16,  # Frame lookahead (kalite artışı)
+        'aq_strength': 8,  # ✅ YENİ: AQ gücü (1-15, 8=optimal)
+        'lookahead': 32,  # ✅ 16→32: Daha iyi bitrate dağılımı
         'b_ref_mode': 'middle',  # B-frame reference mode (kalite)
+        'bf': 3,  # ✅ YENİ: 3 B-frame (daha iyi sıkıştırma)
+        'g': 60,  # ✅ YENİ: GOP size (2 saniyede 1 keyframe @30fps)
     },
     'amd': {
         'quality': 'quality',
