@@ -5428,22 +5428,23 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 logger.warning("ASS dosyası oluşturulamadı")
                 subtitle_config = None
 
-    cpu_cores = multiprocessing.cpu_count()
+    cpu_cores = multiprocessing.cpu_count()  # Ryzen 5800X = 16 threads
 
-    # Worker sayısı stratejisi:
-    # - TURBO_MODE: 4 worker (minimal filtre, NVENC session limit önemli)
-    # - Normal mod: Daha fazla worker (CPU efektler darboğaz, NVENC fallback var)
+    # Worker sayısı stratejisi - MAKSİMUM PERFORMANS
+    # Ryzen 7 5800X (16 thread) + 64GB RAM + RTX 5060 Ti
     if TURBO_MODE:
-        # Turbo: NVENC session limit için 4 worker
+        # Turbo: NVENC session limit için 4 worker (minimal filtre)
         max_workers = min(4, cpu_cores)
-        logger.info(f"🚀 TURBO mode: {max_workers} workers (NVENC optimized)")
+        logger.info(f"🚀 TURBO mode: {max_workers} workers")
     elif GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
-        # Normal + GPU: CPU efektler darboğaz, daha fazla worker kullan
-        # NVENC başarısız olursa CPU fallback var
-        max_workers = max(4, cpu_cores // 2)  # En az 4, CPU'nun yarısına kadar
-        logger.info(f"🎬 Hybrid mode: {max_workers} workers (CPU effects + NVENC encode)")
+        # 🔥 BEAST MODE: Maksimum paralel işlem
+        # CPU efektler darboğaz → thread sayısı - 4 (sistem için)
+        # 16 thread → 12 worker
+        max_workers = max(8, cpu_cores - 4)
+        logger.info(f"🔥 BEAST mode: {max_workers}/{cpu_cores} workers (MAX paralel)")
     else:
-        max_workers = max(2, cpu_cores // 2)
+        # CPU only: %75 thread kullan
+        max_workers = max(4, int(cpu_cores * 0.75))
 
     # Efekt sayısı (sadece manuel seçimde göster)
     if secilen_efektler is not None:
