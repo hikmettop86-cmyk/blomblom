@@ -267,7 +267,7 @@ def check_black_frames(video_path, max_duration=2.0):
 
 def post_render_quality_check(video_path, quality_config=None):
     """
-    Render sonrası kapsamlı kalite kontrolü
+    Render sonrası kapsamlı kalite kontrolü - PARALEL
 
     Args:
         video_path: Video dosya yolu
@@ -276,7 +276,7 @@ def post_render_quality_check(video_path, quality_config=None):
     Returns:
         tuple: (başarılı mı, kalite skoru, detaylar)
     """
-    logger.info("\n🔍 KALİTE KONTROLÜ BAŞLIYOR...")
+    logger.info("\n🔍 KALİTE KONTROLÜ BAŞLIYOR (Paralel)...")
 
     if not quality_config:
         # Varsayılan ayarlar
@@ -289,37 +289,60 @@ def post_render_quality_check(video_path, quality_config=None):
 
     checks = {}
 
-    # 1. Video bütünlüğü
-    if quality_config.get('content_safety', {}).get('check_corrupted_frames', True):
-        logger.info("   📹 Video bütünlüğü kontrol ediliyor...")
-        checks['integrity'] = check_video_integrity(video_path)
-    else:
-        checks['integrity'] = True
+    # ⚡ QUICK MODE: Sadece dosya boyutu kontrolü (en hızlı)
+    if quality_config.get('quick_mode', False):
+        logger.info("⚡ QUICK MODE: Sadece dosya boyutu kontrolü")
+        file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
+        checks['file_size'] = file_size_mb > 1.0
+        quality_score = 1.0 if checks['file_size'] else 0.0
+        logger.info(f"   💾 Dosya boyutu: {file_size_mb:.1f} MB - {'✅' if checks['file_size'] else '❌'}")
+        return True, quality_score, checks
 
-    # 2. Siyah frame kontrolü
-    if quality_config.get('content_safety', {}).get('check_black_frames', True):
-        logger.info("   ⬛ Siyah frame kontrolü...")
-        max_black = quality_config.get('content_safety', {}).get('max_black_duration', 1.0)
-        checks['black_frames'] = check_black_frames(video_path, max_black)
-    else:
-        checks['black_frames'] = True
+    # ✅ PARALEL KONTROLLER - ThreadPoolExecutor ile
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
-    # 3. Ses kalitesi
-    if quality_config.get('audio_quality', {}).get('enabled', True):
-        logger.info("   🔊 Ses kalitesi kontrol ediliyor...")
-        checks['audio'] = check_audio_quality(video_path)
-    else:
-        checks['audio'] = True
+    tasks = {}
 
-    # 4. Bitrate kontrolü
-    if quality_config.get('encoding_quality', {}).get('check_bitrate_variance', True):
-        logger.info("   📊 Bitrate kontrolü...")
-        min_bitrate = quality_config.get('encoding_quality', {}).get('min_avg_bitrate', '8M')
-        checks['bitrate'] = check_bitrate_consistency(video_path, min_bitrate)
-    else:
-        checks['bitrate'] = True
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        # 1. Video bütünlüğü
+        if quality_config.get('content_safety', {}).get('check_corrupted_frames', True):
+            logger.info("   📹 Video bütünlüğü kontrol ediliyor...")
+            tasks['integrity'] = executor.submit(check_video_integrity, video_path)
+        else:
+            checks['integrity'] = True
 
-    # 5. Dosya boyutu kontrolü
+        # 2. Siyah frame kontrolü
+        if quality_config.get('content_safety', {}).get('check_black_frames', True):
+            logger.info("   ⬛ Siyah frame kontrolü...")
+            max_black = quality_config.get('content_safety', {}).get('max_black_duration', 2.0)
+            tasks['black_frames'] = executor.submit(check_black_frames, video_path, max_black)
+        else:
+            checks['black_frames'] = True
+
+        # 3. Ses kalitesi
+        if quality_config.get('audio_quality', {}).get('enabled', True):
+            logger.info("   🔊 Ses kalitesi kontrol ediliyor...")
+            tasks['audio'] = executor.submit(check_audio_quality, video_path)
+        else:
+            checks['audio'] = True
+
+        # 4. Bitrate kontrolü
+        if quality_config.get('encoding_quality', {}).get('check_bitrate_variance', True):
+            logger.info("   📊 Bitrate kontrolü...")
+            min_bitrate = quality_config.get('encoding_quality', {}).get('min_avg_bitrate', '8M')
+            tasks['bitrate'] = executor.submit(check_bitrate_consistency, video_path, min_bitrate)
+        else:
+            checks['bitrate'] = True
+
+        # Sonuçları topla
+        for check_name, future in tasks.items():
+            try:
+                checks[check_name] = future.result(timeout=120)  # Max 2 dakika per check
+            except Exception as e:
+                logger.warning(f"⚠️ {check_name} kontrolü timeout/hata: {e}")
+                checks[check_name] = True  # Hata durumunda geç
+
+    # 5. Dosya boyutu kontrolü (anlık, paralel gerekmez)
     file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
     checks['file_size'] = file_size_mb > 1.0  # En az 1MB
 

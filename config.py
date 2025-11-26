@@ -612,8 +612,11 @@ METADATA_RANDOMIZATION = {
 # ============================================================================
 # 🆕 GELİŞMİŞ KALİTE KONTROL SİSTEMİ
 # ============================================================================
+# ⚡ HIZLI RENDER İÇİN: enabled = False yaparak tüm kontrolleri atlayabilirsin
+# Bu 30-60 saniye kazandırır ama kalite garantisi olmaz
 ADVANCED_QUALITY_CHECKS = {
-    'enabled': True,  # Master switch
+    'enabled': True,  # ⚡ False = Tüm kontrolleri atla (hızlı render)
+    'quick_mode': False,  # ⚡ True = Sadece dosya boyutu kontrolü (en hızlı)
 
     'frame_analysis': {
         'enabled': True,

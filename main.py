@@ -5610,8 +5610,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 torch.cuda.synchronize()
-                import time
-                time.sleep(0.5)  # GPU'ya kaynak bırakması için zaman ver
+                # ✅ 500ms → 0ms: Modern GPU'lar anında kaynak serbest bırakır
                 logger.debug("🧹 CUDA cache temizlendi (PyTorch → FFmpeg geçişi)")
         except:
             pass
