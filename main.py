@@ -5556,6 +5556,16 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
         temp_scaled = os.path.join(temp_klasor, 'merged_scaled.mp4')
         logger.info("🔧 Normalizing video resolution to 1920x1080...")
 
+        # ✅ PyTorch CUDA cache temizle (Whisper GPU kullandıysa NVENC ile çakışabilir)
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+                logger.debug("🧹 CUDA cache temizlendi (PyTorch → FFmpeg geçişi)")
+        except:
+            pass
+
         # Scale için hibrit yaklaşım: CPU scale + GPU encode
         # (scale_npp için libnpp gerekli, çoğu FFmpeg build'inde yok)
         if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
