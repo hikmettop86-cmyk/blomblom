@@ -5568,23 +5568,22 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
         except:
             pass
 
-        # Scale için hibrit yaklaşım: CUDA decode + CPU scale + GPU encode
-        # (scale_npp için libnpp gerekli, çoğu FFmpeg build'inde yok)
+        # Scale için: CPU scale + GPU encode (hwaccel olmadan)
+        # RTX 5060 Ti'da hwaccel + scale kombinasyonu crash yapıyor
         if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
             nv_settings = QUALITY_SETTINGS['nvidia']
-            # ✅ CUDA decode → CPU scale → NVENC encode (basit parametreler)
+            # ✅ CPU decode/scale → NVENC encode only
             scale_komut = [
                 'ffmpeg', '-v', 'warning', '-y',
-                '-hwaccel', 'cuda',  # GPU decode
                 '-i', temp_video,
                 '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
                 '-c:v', 'h264_nvenc',
                 '-preset', nv_settings['preset'],
-                '-b:v', '15M',  # Basit bitrate (complex rc ayarları crash yapabilir)
+                '-b:v', '15M',
                 '-an',
                 temp_scaled
             ]
-            logger.info("🚀 Scale: CUDA decode + NVENC encode")
+            logger.info("🚀 Scale: CPU decode + NVENC encode")
         else:
             scale_komut = [
                 'ffmpeg', '-v', 'warning',
