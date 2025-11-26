@@ -130,7 +130,7 @@ except ImportError as e:
 
 # Import yeni config modülleri
 try:
-    from config import METADATA_RANDOMIZATION, UPLOAD_STRATEGY, ADVANCED_QUALITY_CHECKS
+    from config import METADATA_RANDOMIZATION, UPLOAD_STRATEGY, ADVANCED_QUALITY_CHECKS, TURBO_MODE
     from effects import EFFECT_MODE, EFFECT_BALANCING
 except ImportError:
     # Eski config kullanılıyor, varsayılan değerler
@@ -139,6 +139,7 @@ except ImportError:
     ADVANCED_QUALITY_CHECKS = {'enabled': False}
     EFFECT_MODE = 'medium'
     EFFECT_BALANCING = {'enabled': False}
+    TURBO_MODE = False
 
 # ==================== FONT GENİŞLİK HESAPLAMA SİSTEMİ ====================
 
@@ -4971,35 +4972,43 @@ def klip_isle_parallel(args):
     for current_encoder_type, current_encoder_config in encoders_to_try:
         for deneme in range(2):
             try:
-                # Filtreler - CINEMATIC EFFECTS EKLENDİ
-                video_filtre = gelismis_video_filtre_olustur(
-                    item['varyasyon'],
-                    subtitle_config=None,
-                    cinematic_effects=cinematic_fx
-                )
-                ses_filtre = gelismis_audio_filtre_olustur(item['varyasyon'])
+                # ===== 🚀 TURBO MODE: Minimal filtreler (5-10x hızlı) =====
+                if TURBO_MODE:
+                    # Sadece scale + fps (efektler atlanır)
+                    final_video_filtre = 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,fps=30'
+                    final_audio_filtre = 'loudnorm=I=-16:TP=-1.5:LRA=11'
+                    if klip_index == 1:
+                        logger.info("🚀 TURBO MODE: Minimal filtreler (hızlı render)")
+                else:
+                    # Normal mod - Filtreler + CINEMATIC EFFECTS
+                    video_filtre = gelismis_video_filtre_olustur(
+                        item['varyasyon'],
+                        subtitle_config=None,
+                        cinematic_effects=cinematic_fx
+                    )
+                    ses_filtre = gelismis_audio_filtre_olustur(item['varyasyon'])
 
-                # Fingerprint filtreleri
-                fp_video_filtre = fingerprint_video_filtresi(fp_params)
-                fp_audio_filtre = fingerprint_audio_filtresi(fp_params)
+                    # Fingerprint filtreleri
+                    fp_video_filtre = fingerprint_video_filtresi(fp_params)
+                    fp_audio_filtre = fingerprint_audio_filtresi(fp_params)
 
-                # Video filtreleri birleştir
-                tum_video_filtreler = []
-                if video_filtre:
-                    tum_video_filtreler.append(video_filtre)
-                if fp_video_filtre:
-                    tum_video_filtreler.extend(fp_video_filtre)
+                    # Video filtreleri birleştir
+                    tum_video_filtreler = []
+                    if video_filtre:
+                        tum_video_filtreler.append(video_filtre)
+                    if fp_video_filtre:
+                        tum_video_filtreler.extend(fp_video_filtre)
 
-                final_video_filtre = ','.join(tum_video_filtreler) if tum_video_filtreler else None
+                    final_video_filtre = ','.join(tum_video_filtreler) if tum_video_filtreler else None
 
-                # Audio filtreleri birleştir
-                tum_audio_filtreler = []
-                if ses_filtre:
-                    tum_audio_filtreler.append(ses_filtre)
-                if fp_audio_filtre:
-                    tum_audio_filtreler.extend(fp_audio_filtre)
+                    # Audio filtreleri birleştir
+                    tum_audio_filtreler = []
+                    if ses_filtre:
+                        tum_audio_filtreler.append(ses_filtre)
+                    if fp_audio_filtre:
+                        tum_audio_filtreler.extend(fp_audio_filtre)
 
-                final_audio_filtre = ','.join(tum_audio_filtreler) if tum_audio_filtreler else None
+                    final_audio_filtre = ','.join(tum_audio_filtreler) if tum_audio_filtreler else None
 
                 # ===== CPU DECODE + GPU ENCODE =====
                 # hwaccel cuda KALDIRILDI: Küçük dosyalarda GPU↔CPU transfer overhead
@@ -6148,7 +6157,10 @@ def main():
         print(f"\n" + "=" * 100)
         print("🚀 YOUTUBE ULTRA PRO - ALGORİTMA OPTİMİZASYONU AKTİF".center(100))
         print("=" * 100)
-        print(f"   ⚙️  Efekt Modu: {EFFECT_MODE.upper()}")
+        if TURBO_MODE:
+            print(f"   🚀 TURBO MODE: AKTİF (Efektler atlanır, hızlı render)")
+        else:
+            print(f"   ⚙️  Efekt Modu: {EFFECT_MODE.upper()}")
         print(f"   ✅ Kalite Kontrolü: {'Aktif' if ADVANCED_QUALITY_CHECKS.get('enabled') else 'Devre Dışı'}")
         print(f"   ✅ Metadata Randomizasyonu: {'Aktif' if METADATA_RANDOMIZATION.get('enabled') else 'Devre Dışı'}")
         print(f"   ✅ Efekt Dengeleme: {'Aktif' if EFFECT_BALANCING.get('enabled') else 'Devre Dışı'}")

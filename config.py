@@ -23,8 +23,16 @@ __all__ = [
     'FINGERPRINT_CONFIG', 'AUDIO_HUMANIZATION_CONFIG', 'SUBTITLE_CONFIG', 'QUALITY_CONFIG',
     'SUBTITLE_FONTS', 'STORY_CHANNEL_PRESET',
     'ADVANCED_QUALITY_CHECKS', 'METADATA_RANDOMIZATION',
-    'UPLOAD_STRATEGY', 'ENGAGEMENT_OPTIMIZATION'
+    'UPLOAD_STRATEGY', 'ENGAGEMENT_OPTIMIZATION',
+    'TURBO_MODE'
 ]
+
+# ============================================================================
+# 🚀 TURBO MODE - UZUN VİDEOLAR İÇİN HIZLI RENDER
+# ============================================================================
+# True: Efektler atlanır, sadece scale + NVENC (5-10x hızlı)
+# False: Normal mod - tüm efektler uygulanır
+TURBO_MODE = False  # 👈 Uzun videolarda True yapın!
 
 # ============================================================================
 # KLASÖR YAPISI
