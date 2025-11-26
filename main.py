@@ -5566,12 +5566,15 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
         temp_video = os.path.join(temp_klasor, 'merged_nosound.mp4')
 
+        # ✅ FIX: Video freeze sorunu - timestamp ve keyframe düzeltmeleri
         komut = [
             'ffmpeg', '-v', 'warning',
+            '-fflags', '+genpts+igndts',  # Timestamp'leri yeniden oluştur
             '-f', 'concat',
             '-safe', '0',
             '-i', concat_liste,
             '-c', 'copy',
+            '-avoid_negative_ts', 'make_zero',  # Negatif timestamp'leri düzelt
             '-y', temp_video
         ]
         sonuc = subprocess.run(komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
