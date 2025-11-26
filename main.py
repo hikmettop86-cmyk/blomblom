@@ -1129,8 +1129,8 @@ def neon_glow_filtre_olustur(neon_params):
     # Edge detection + glow
     filters.append("edgedetect=low=0.1:high=0.4")
 
-    # Glow effect
-    sigma = round(blur_radius / 3, 2)
+    # Glow effect - sigma sınırlı (CPU yükünü azalt)
+    sigma = min(round(blur_radius / 3, 2), 2.5)
     filters.append(f"gblur=sigma={sigma}")
 
     # Color tint based on selection
@@ -1166,8 +1166,8 @@ def vhs_advanced_filtre_olustur(vhs_params):
     if vhs_params.get('tracking_lines', True):
         filters.append("il=l=d:c=d")
 
-    # VHS noise
-    filters.append("noise=alls=12:allf=t")
+    # VHS noise - azaltıldı (CPU optimize)
+    filters.append("noise=alls=8:allf=t")
 
     # ✅ FIX: Tape crease - drawbox random() kaldırıldı
     # Sabit pozisyonda horizontal line (her çalıştırmada farklı görünmek için Python random kullan)
@@ -1415,9 +1415,9 @@ def overlay_particles_filtre_olustur(overlay_params):
         filters.append(f"noise=alls={noise_strength}:allf=t")
         filters.append("eq=brightness=0.1:contrast=1.5")
     elif particle_type == 'bokeh':
-        # Büyük, yumuşak parçacıklar
+        # Büyük, yumuşak parçacıklar - sigma optimize
         filters.append(f"noise=alls=5:allf=t")
-        filters.append("gblur=sigma=3")
+        filters.append("gblur=sigma=2")
         filters.append(f"eq=brightness={density / 5}:contrast=0.8")
 
     return filters
@@ -1559,7 +1559,7 @@ def color_grading_filtre_olustur(grading_params):
 
         filters.append("curves=r='0/0 0.5/0.4 1/1':g='0/0 0.5/0.55 1/0.9':b='0/0.1 0.5/0.6 1/0.7'")
         filters.append(f"eq=contrast={1.0 + contrast / 100}:saturation=1.{neon_boost}")
-        filters.append("unsharp=5:5:1.0:5:5:0")
+        filters.append("unsharp=3:3:0.8:3:3:0")
 
     elif preset_type == 'moody':
         shadows = params.get('shadows', -15)
@@ -1595,8 +1595,8 @@ def color_grading_filtre_olustur(grading_params):
         sharpness = params.get('sharpness', 0.8)
 
         filters.append(f"eq=saturation={1.0 + saturation / 100}:contrast={1.0 + contrast / 100}")
-        filters.append(f"unsharp=5:5:{sharpness}:5:5:0")
-        filters.append("noise=alls=6:allf=t")
+        filters.append(f"unsharp=3:3:{sharpness}:3:3:0")
+        filters.append("noise=alls=5:allf=t")
 
     return filters
 
@@ -1609,7 +1609,8 @@ def dream_glow_filtre_olustur(glow_params):
     filters = []
     intensity = random.uniform(*glow_params.get('intensity', (0.3, 0.6)))
 
-    sigma = round(intensity * 5, 2)
+    # Sigma sınırlı - CPU optimize
+    sigma = min(round(intensity * 5, 2), 2.5)
     filters.append(f"gblur=sigma={sigma}")
 
     if glow_params.get('soft_light', True):
@@ -1649,7 +1650,8 @@ def sharpen_boost_filtre_olustur(sharpen_params):
     filters = []
     intensity = random.uniform(*sharpen_params.get('intensity', (0.6, 1.2)))
 
-    odd_radii = [3, 5, 7]
+    # radius=7 çok yavaş, 3-5 ile sınırlandı
+    odd_radii = [3, 5]
     radius = random.choice(odd_radii)
 
     filters.append(f"unsharp={radius}:{radius}:{intensity}:{radius}:{radius}:0")
@@ -1781,8 +1783,8 @@ def glow_bloom_filtre_olustur(glow_params):
         intensity = random.uniform(*params['intensity'])
         radius = random.randint(*params['radius'])
 
-        # Soft glow - gblur + blend
-        sigma = round(radius / 5, 2)
+        # Soft glow - gblur + blend (sigma sınırlı)
+        sigma = min(round(radius / 5, 2), 2.5)
         filters.append(f"gblur=sigma={sigma}")
         filters.append(f"eq=brightness={intensity / 2}")
 
@@ -1797,8 +1799,8 @@ def glow_bloom_filtre_olustur(glow_params):
         params = types['edge_glow']
         color = random.choice(params['color'])
 
-        # Edge glow - kenar parlama
-        filters.append("unsharp=5:5:1.5:5:5:0")
+        # Edge glow - kenar parlama (kernel optimize)
+        filters.append("unsharp=3:3:1.2:3:3:0")
 
         if color == 'blue':
             filters.append("colorchannelmixer=bb=1.3")
@@ -2007,9 +2009,9 @@ def vintage_70s_filtre_olustur(params):
     filters.append(f"eq=brightness={warm / 200}:saturation={1 - params.get('saturation', -10) / 100}")
 
     soft_focus = params.get('soft_focus', 0.4)
-    filters.append(f"unsharp=5:5:-{soft_focus}:5:5:0")
+    filters.append(f"unsharp=3:3:-{soft_focus}:3:3:0")
 
-    grain = params.get('grain', 12)
+    grain = params.get('grain', 8)
     filters.append(f"noise=alls={grain}:allf=t+u")
 
     if params.get('vignette', True):
@@ -2038,7 +2040,7 @@ def vintage_80s_filtre_olustur(params):
         filters.append("boxblur=lr=1:lp=1")
 
     if params.get('neon_glow', True):
-        filters.append("unsharp=5:5:1.5:5:5:0")
+        filters.append("unsharp=3:3:1.2:3:3:0")
 
     filters.append("curves=vintage")
 
@@ -2053,9 +2055,9 @@ def vintage_90s_filtre_olustur(params):
     filters.append(f"eq=saturation={1 + oversat / 100}")
 
     sharp = params.get('sharpness', 0.6)
-    filters.append(f"unsharp=5:5:{sharp}:5:5:0")
+    filters.append(f"unsharp=3:3:{sharp}:3:3:0")
 
-    grain = params.get('grain', 6)
+    grain = params.get('grain', 5)
     filters.append(f"noise=alls={grain}:allf=t")
 
     if params.get('camcorder_look', True):
@@ -2075,7 +2077,7 @@ def film_grain_filtre_olustur(params):
     """Analog film grain efekti"""
     filters = []
 
-    grain_min, grain_max = params.get('grain_strength', (10, 20))
+    grain_min, grain_max = params.get('grain_strength', (8, 15))
     grain = random.randint(grain_min, grain_max)
 
     filters.append(f"noise=alls={grain}:allf=t+u")
@@ -2949,19 +2951,19 @@ def gelismis_video_filtre_olustur(varyasyon, subtitle_config=None, cinematic_eff
     elif varyasyon['color_tint'] == 'muted':
         filtreler.append("eq=saturation=0.9")
 
-    # Unsharp
-    if varyasyon['unsharp'] > 0.5:
-        unsharp_val = min(varyasyon['unsharp'] * 0.5, 0.5)
-        filtreler.append(f"unsharp=5:5:{unsharp_val}:5:5:0")
+    # Unsharp - optimize edildi (threshold↑, kernel↓)
+    if varyasyon['unsharp'] > 0.7:
+        unsharp_val = min(varyasyon['unsharp'] * 0.4, 0.4)
+        filtreler.append(f"unsharp=3:3:{unsharp_val}:3:3:0")
 
     # Vignette
     if varyasyon['vignette']:
         filtreler.append("vignette=PI/6")
 
-    # Film grain
-    if varyasyon['grain'] > 8:
-        grain_val = int(varyasyon['grain'] * 0.4)
-        if grain_val > 3:
+    # Film grain - optimize edildi (threshold↑, strength↓)
+    if varyasyon['grain'] > 12:
+        grain_val = int(varyasyon['grain'] * 0.3)
+        if grain_val > 4:
             filtreler.append(f"noise=alls={grain_val}:allf=t")
 
     # Speed - SLOW MOTION
@@ -5435,21 +5437,16 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
     cpu_cores = multiprocessing.cpu_count()  # Ryzen 5800X = 16 threads
 
-    # Worker sayısı stratejisi - MAKSİMUM PERFORMANS
-    # Ryzen 7 5800X (16 thread) + 64GB RAM + RTX 5060 Ti
+    # Worker sayısı - MAKSİMUM (render sırasında başka işlem yok)
     if TURBO_MODE:
-        # Turbo: NVENC session limit için 4 worker (minimal filtre)
         max_workers = min(4, cpu_cores)
-        logger.info(f"🚀 TURBO mode: {max_workers} workers")
+        logger.info(f"🚀 TURBO: {max_workers} workers")
     elif GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
-        # 🔥 BEAST MODE: Maksimum paralel işlem
-        # CPU efektler darboğaz → thread sayısı - 4 (sistem için)
-        # 16 thread → 12 worker
-        max_workers = max(8, cpu_cores - 4)
-        logger.info(f"🔥 BEAST mode: {max_workers}/{cpu_cores} workers (MAX paralel)")
+        # 🔥 FULL CPU: 16 thread → 15 worker (1 sistem için)
+        max_workers = cpu_cores - 1
+        logger.info(f"🔥 FULL CPU: {max_workers}/{cpu_cores} workers")
     else:
-        # CPU only: %75 thread kullan
-        max_workers = max(4, int(cpu_cores * 0.75))
+        max_workers = cpu_cores - 1
 
     # Efekt sayısı (sadece manuel seçimde göster)
     if secilen_efektler is not None:
