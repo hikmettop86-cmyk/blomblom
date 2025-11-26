@@ -2987,6 +2987,11 @@ def gelismis_video_filtre_olustur(varyasyon, subtitle_config=None, cinematic_eff
             logger.info(f"Subtitle filter: {subtitle_filter[:80]}...")
             filtreler.append(subtitle_filter)
 
+    # ✅ FINAL: Kesin 1920x1080 çıkış garantisi
+    # Zoom/crop/rotate gibi efektler boyutu değiştirebiliyor
+    # Son adımda kesin boyuta scale et
+    filtreler.append("scale=1920:1080:force_original_aspect_ratio=disable")
+
     return ','.join(filtreler) if filtreler else None
 
 
