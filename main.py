@@ -5231,11 +5231,11 @@ def klip_isle_parallel(args):
 
                             except Exception as e:
                                 logger.warning(f"⚠️ GPU Optimizer failed, using legacy NVENC: {e}")
-                                # Fallback to legacy NVENC
+                                # Fallback to legacy NVENC - KLİP ENCODİNG p1 (ara dosya, hızlı)
                                 nv_settings = QUALITY_SETTINGS['nvidia']
                                 nvenc_cmd = [
                                     '-c:v', 'h264_nvenc',
-                                    '-preset', nv_settings['preset'],
+                                    '-preset', 'p1',  # ✅ C OPT: p4→p1 (ara dosya, final'de tekrar encode)
                                     '-rc', nv_settings['rc'],
                                     '-b:v', nv_settings['bitrate'],
                                     '-maxrate', nv_settings['maxrate'],
@@ -5260,11 +5260,11 @@ def klip_isle_parallel(args):
                                 ])
                                 komut.extend(nvenc_cmd)
                         else:
-                            # Legacy NVENC (GPU Optimizer not available)
+                            # Legacy NVENC (GPU Optimizer not available) - KLİP ENCODİNG p1 (hızlı)
                             nv_settings = QUALITY_SETTINGS['nvidia']
                             nvenc_cmd = [
                                 '-c:v', 'h264_nvenc',
-                                '-preset', nv_settings['preset'],
+                                '-preset', 'p1',  # ✅ C OPT: p4→p1 (ara dosya, final'de tekrar encode)
                                 '-rc', nv_settings['rc'],
                                 '-b:v', nv_settings['bitrate'],
                                 '-maxrate', nv_settings['maxrate'],
@@ -5597,12 +5597,9 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
         if sonuc.returncode != 0 or not dosya_gecerli_mi(temp_video):
             return False, f"Video birleştirme hatası: {sonuc.stderr[:200]}"
 
-        # ✅ CRITICAL FIX: Scale concat video ÖNCE subtitle'dan
-        # Problem: Concat edilen kliplerde farklı boyutlar var (1918x1078, 1908x1068, vb.)
-        # Bu GPU encoder'ı crash ettirir (resolution changes)
-        # Çözüm: Concat'tan sonra tüm video'yu kesin 1920x1080'e scale et
-        temp_scaled = os.path.join(temp_klasor, 'merged_scaled.mp4')
-        logger.info("🔧 Normalizing video resolution to 1920x1080...")
+        # ✅ OPTİMİZASYON: Scale + Subtitle TEK PASS'ta birleştirildi
+        # Eski: Scale pass → Subtitle pass (2x encode, 2x GPU kullanımı)
+        # Yeni: Scale+Subtitle tek pass'ta (1x encode, %50 daha hızlı)
 
         # ✅ PyTorch CUDA cache temizle (Whisper GPU kullandıysa NVENC ile çakışabilir)
         try:
@@ -5610,12 +5607,10 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 torch.cuda.synchronize()
-                # ✅ 500ms → 0ms: Modern GPU'lar anında kaynak serbest bırakır
                 logger.debug("🧹 CUDA cache temizlendi (PyTorch → FFmpeg geçişi)")
         except:
             pass
 
-        # Scale için: NVENC GPU encoding
         nvenc_failed = False
 
         # ✅ Input video kontrolü
@@ -5623,12 +5618,12 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             logger.error(f"❌ Input video geçersiz: {temp_video}")
             return False, "Concat video geçersiz"
 
-        # Input video boyutunu kontrol et - SADECE TAM 1920x1080 ise scale'i atla!
+        # Input video boyutunu kontrol et - scale gerekli mi?
         probe_cmd = ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
                      '-show_entries', 'stream=width,height,duration', '-of', 'csv=p=0', temp_video]
         probe_result = subprocess.run(probe_cmd, capture_output=True, text=True)
 
-        skip_scale = False
+        needs_scale = True  # Default: scale gerekli
         if probe_result.returncode == 0:
             try:
                 parts = probe_result.stdout.strip().split(',')
@@ -5636,77 +5631,18 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 duration = float(parts[2]) if len(parts) > 2 else 0
                 logger.info(f"📹 Input video: {width}x{height}, {duration:.1f}s")
 
-                # ✅ SADECE TAM 1920x1080 ise atla (tolerans kaldırıldı)
+                # ✅ SADECE TAM 1920x1080 ise scale atla
                 if width == 1920 and height == 1080:
-                    logger.info(f"✅ Video boyutu TAM 1920x1080 - scale atlanıyor!")
-                    skip_scale = True
+                    logger.info(f"✅ Video boyutu TAM 1920x1080 - scale filter atlanacak")
+                    needs_scale = False
                 else:
-                    logger.info(f"⚠️ Video boyutu {width}x{height} != 1920x1080 - scale gerekli")
+                    logger.info(f"⚠️ Video boyutu {width}x{height} != 1920x1080 - scale filter eklenecek")
             except Exception as e:
                 logger.warning(f"⚠️ Video boyutu okunamadı: {e}")
 
-        if skip_scale:
-            # Scale gerekmez - direkt subtitle encoding'e geç
-            temp_scaled = temp_video
-            logger.info("⏩ Scale adımı atlandı (zaten doğru boyut)")
-        elif GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
-            nv_settings = QUALITY_SETTINGS['nvidia']
-            scale_komut = [
-                'ffmpeg', '-v', 'error',
-                '-i', temp_video,
-                '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p',
-                '-c:v', 'h264_nvenc',
-                '-preset', 'p4',
-                '-rc', 'vbr',
-                '-b:v', '15M',
-                '-an',
-                '-y', temp_scaled
-            ]
-            logger.info("🚀 Scale: NVENC GPU encoding")
-
-            try:
-                scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=600)
-            except subprocess.TimeoutExpired:
-                logger.error("⏰ Scale timeout (10 dakika)")
-                scale_sonuc = type('obj', (object,), {'returncode': -1, 'stderr': 'Timeout'})()
-
-            if scale_sonuc.returncode != 0 or not dosya_gecerli_mi(temp_scaled):
-                error_msg = scale_sonuc.stderr[:500] if scale_sonuc.stderr else "No stderr output"
-                logger.warning(f"⚠️ NVENC Scale failed (code {scale_sonuc.returncode}): {error_msg}")
-                logger.info("🔄 CPU fallback...")
-                nvenc_failed = True
-
-                scale_komut_cpu = [
-                    'ffmpeg', '-v', 'warning',
-                    '-i', temp_video,
-                    '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
-                    '-c:v', 'libx264', '-preset', 'fast', '-crf', '18',
-                    '-pix_fmt', 'yuv420p', '-an', '-y', temp_scaled
-                ]
-                scale_sonuc = subprocess.run(scale_komut_cpu, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                if scale_sonuc.returncode == 0 and dosya_gecerli_mi(temp_scaled):
-                    logger.info("✅ Video normalized (CPU fallback)")
-                    temp_video = temp_scaled
-                else:
-                    temp_scaled = temp_video
-            else:
-                logger.info("✅ Video normalized to 1920x1080")
-                temp_video = temp_scaled
-        else:
-            scale_komut = [
-                'ffmpeg', '-v', 'warning',
-                '-i', temp_video,
-                '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
-                '-c:v', 'libx264', '-preset', 'fast', '-crf', '18',
-                '-pix_fmt', 'yuv420p', '-an', '-y', temp_scaled
-            ]
-            logger.info("🔧 Scale: CPU encoding")
-            scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            if scale_sonuc.returncode == 0 and dosya_gecerli_mi(temp_scaled):
-                logger.info("✅ Video normalized to 1920x1080")
-                temp_video = temp_scaled
-            else:
-                temp_scaled = temp_video
+        # Scale filter string (tek pass'ta kullanılacak)
+        scale_filter = 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p'
+        logger.info("⚡ TEK PASS optimizasyonu: Scale + Subtitle birleştirildi")
 
         audio_cfg = AUDIO_SETTINGS
 
@@ -5767,14 +5703,28 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
         audio_filtre_str = ','.join(audio_filtreler)
 
-        # Final merge - CPU decode + NVENC encode (subtitle filtresi CPU gerektiriyor)
-        komut = [
-            'ffmpeg', '-v', 'warning',
+        # ✅ OPTİMİZASYON: TEK PASS - hwaccel cuda + scale + subtitle birleşik
+        # Eski: Scale pass → Subtitle pass (2x encode)
+        # Yeni: Tek pass'ta scale+subtitle (1x encode, %50 daha hızlı)
+
+        input_dir = os.path.dirname(temp_video)
+
+        # ✅ HWACCEL CUDA: GPU decode (B optimizasyonu)
+        use_hwaccel = GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia'
+
+        komut = ['ffmpeg', '-v', 'warning']
+
+        if use_hwaccel:
+            # GPU hardware decode - input'tan önce gelir
+            komut.extend(['-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda'])
+            logger.info("⚡ HWACCEL CUDA: GPU decode aktif")
+
+        komut.extend([
             '-i', temp_video,
             '-i', ses_dosyasi,
             '-map', '0:v',
             '-map', '1:a',
-        ]
+        ])
 
         if subtitle_config and subtitle_config.get('srt_file'):
             ass_file = subtitle_config['srt_file']
@@ -5783,26 +5733,37 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             print(f"   📝 Alt yazılar ekleniyor: {os.path.basename(ass_file)}")
 
             # ✅ FFmpeg subtitles filter - Windows path sorunu çözümü
-            # ASS dosyasını input video ile aynı klasöre kopyala
             import shutil
             temp_ass_name = 'subs_temp.ass'
-            input_dir = os.path.dirname(temp_video)
             temp_ass_path = os.path.join(input_dir, temp_ass_name)
             try:
                 shutil.copy2(ass_file, temp_ass_path)
-                # Sadece dosya adı kullan (path olmadan)
                 ass_path_escaped = temp_ass_name
             except Exception as e:
                 logger.warning(f"ASS kopyalama hatası: {e}, orijinal path kullanılıyor")
                 ass_path_escaped = "'" + ass_path.replace(':', '\\\\:') + "'"
 
-            # Subtitle encoding için GPU - klip encoding ile aynı parametreler
-            # ✅ nvenc_failed durumunda CPU kullan (scale'de crash olduysa)
-            if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia' and not nvenc_failed:
+            # ✅ TEK PASS: Scale + Subtitle birleşik filter chain
+            # hwaccel cuda kullanıldığında önce hwdownload gerekli (GPU → CPU for subtitle burn)
+            if needs_scale:
+                if use_hwaccel:
+                    # GPU decode → CPU'ya indir → scale + subtitle
+                    combined_filter = f'hwdownload,format=nv12,{scale_filter},subtitles={ass_path_escaped}'
+                else:
+                    combined_filter = f'{scale_filter},subtitles={ass_path_escaped}'
+                logger.info(f"⚡ TEK PASS: Scale + Subtitle birleşik")
+            else:
+                if use_hwaccel:
+                    combined_filter = f'hwdownload,format=nv12,subtitles={ass_path_escaped}'
+                else:
+                    combined_filter = f'subtitles={ass_path_escaped}'
+                logger.info(f"⚡ TEK PASS: Sadece Subtitle (scale gerekmez)")
+
+            if use_hwaccel and not nvenc_failed:
                 nv_settings = QUALITY_SETTINGS['nvidia']
-                print(f"   🚀 NVENC GPU altyazı encoding")
+                print(f"   🚀 NVENC GPU TEK PASS encoding (scale+subtitle)")
                 komut.extend([
-                    '-vf', f'subtitles={ass_path_escaped}',
+                    '-vf', combined_filter,
                     '-c:v', 'h264_nvenc',
                     '-preset', nv_settings['preset'],
                     '-rc', nv_settings['rc'],
@@ -5814,18 +5775,42 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 ])
             else:
                 if nvenc_failed:
-                    print(f"   📝 CPU altyazı encoding (NVENC fallback)")
+                    print(f"   📝 CPU TEK PASS encoding (NVENC fallback)")
                 else:
-                    print(f"   📝 CPU altyazı encoding")
+                    print(f"   📝 CPU TEK PASS encoding")
                 komut.extend([
-                    '-vf', f'subtitles={ass_path_escaped}',
+                    '-vf', combined_filter,
                     '-c:v', 'libx264',
                     '-preset', 'fast',
                     '-crf', '18',
                     '-pix_fmt', 'yuv420p',
                 ])
         else:
-            komut.extend(['-c:v', 'copy'])
+            # Subtitle yok - sadece scale gerekirse uygula
+            if needs_scale:
+                if use_hwaccel:
+                    komut.extend(['-vf', f'hwdownload,format=nv12,{scale_filter}'])
+                else:
+                    komut.extend(['-vf', scale_filter])
+
+                if use_hwaccel and not nvenc_failed:
+                    nv_settings = QUALITY_SETTINGS['nvidia']
+                    komut.extend([
+                        '-c:v', 'h264_nvenc',
+                        '-preset', nv_settings['preset'],
+                        '-rc', nv_settings['rc'],
+                        '-b:v', nv_settings['bitrate'],
+                        '-pix_fmt', 'yuv420p',
+                    ])
+                else:
+                    komut.extend([
+                        '-c:v', 'libx264',
+                        '-preset', 'fast',
+                        '-crf', '18',
+                        '-pix_fmt', 'yuv420p',
+                    ])
+            else:
+                komut.extend(['-c:v', 'copy'])
 
         # ✅ FIX: Limit output duration to audio duration (video = audio length)
         # This ensures video doesn't exceed audio duration by more than a few seconds
@@ -5851,11 +5836,11 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             error_msg = sonuc.stderr[:500] if sonuc.stderr else sonuc.stdout[:500] if sonuc.stdout else "No FFmpeg output"
             logger.error(f"Encoding hatası (code {sonuc.returncode}): {error_msg}")
 
-            # ✅ NVENC crash → CPU fallback retry
+            # ✅ NVENC crash → CPU fallback retry (TEK PASS - combined filter)
             if sonuc.returncode == 3221225477 and encoder_type == 'nvidia' and not nvenc_failed:
-                logger.info("🔄 NVENC crashed during final encode, retrying with CPU...")
+                logger.info("🔄 NVENC crashed during final encode, retrying with CPU (tek pass)...")
 
-                # Rebuild command with CPU encoder
+                # Rebuild command with CPU encoder - TEK PASS (scale + subtitle birleşik)
                 komut_cpu = [
                     'ffmpeg', '-v', 'warning',
                     '-i', temp_video,
@@ -5865,15 +5850,29 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 ]
 
                 if subtitle_config and subtitle_config.get('srt_file'):
+                    # CPU fallback - combined filter kullan (hwaccel yok)
+                    if needs_scale:
+                        cpu_filter = f'{scale_filter},subtitles={ass_path_escaped}'
+                    else:
+                        cpu_filter = f'subtitles={ass_path_escaped}'
                     komut_cpu.extend([
-                        '-vf', f'subtitles={ass_path_escaped}',
+                        '-vf', cpu_filter,
                         '-c:v', 'libx264',
                         '-preset', 'fast',
                         '-crf', '18',
                         '-pix_fmt', 'yuv420p',
                     ])
                 else:
-                    komut_cpu.extend(['-c:v', 'copy'])
+                    if needs_scale:
+                        komut_cpu.extend([
+                            '-vf', scale_filter,
+                            '-c:v', 'libx264',
+                            '-preset', 'fast',
+                            '-crf', '18',
+                            '-pix_fmt', 'yuv420p',
+                        ])
+                    else:
+                        komut_cpu.extend(['-c:v', 'copy'])
 
                 if ses_suresi:
                     komut_cpu.extend(['-t', str(ses_suresi + 2)])
