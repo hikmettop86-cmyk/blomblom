@@ -5598,79 +5598,88 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             logger.error(f"❌ Input video geçersiz: {temp_video}")
             return False, "Concat video geçersiz"
 
-        # Input video boyutunu logla
+        # Input video boyutunu kontrol et - zaten 1920x1080 ise scale'i atla!
         probe_cmd = ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
                      '-show_entries', 'stream=width,height,duration', '-of', 'csv=p=0', temp_video]
         probe_result = subprocess.run(probe_cmd, capture_output=True, text=True)
-        if probe_result.returncode == 0:
-            logger.info(f"📹 Input video: {probe_result.stdout.strip()}")
 
-        if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
+        skip_scale = False
+        if probe_result.returncode == 0:
+            try:
+                parts = probe_result.stdout.strip().split(',')
+                width, height = int(parts[0]), int(parts[1])
+                duration = float(parts[2]) if len(parts) > 2 else 0
+                logger.info(f"📹 Input video: {width}x{height}, {duration:.1f}s")
+
+                # ✅ Zaten 1920x1080 ise scale'i atla! (BÜYÜK PERFORMANS KAZANCI)
+                if width == 1920 and height == 1080:
+                    logger.info("✅ Video zaten 1920x1080 - scale atlanıyor!")
+                    skip_scale = True
+            except Exception as e:
+                logger.warning(f"⚠️ Video boyutu okunamadı: {e}")
+
+        if skip_scale:
+            # Scale gerekmez - direkt subtitle encoding'e geç
+            temp_scaled = temp_video
+            logger.info("⏩ Scale adımı atlandı (zaten doğru boyut)")
+        elif GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
             nv_settings = QUALITY_SETTINGS['nvidia']
-            # ✅ Basitleştirilmiş NVENC komutu - daha az parametre = daha az hata
             scale_komut = [
-                'ffmpeg', '-v', 'error',  # error seviyesi - daha fazla detay
+                'ffmpeg', '-v', 'error',
                 '-i', temp_video,
                 '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p',
                 '-c:v', 'h264_nvenc',
-                '-preset', 'p4',  # Sabit preset (config'den gelen sorunlu olabilir)
+                '-preset', 'p4',
                 '-rc', 'vbr',
                 '-b:v', '15M',
                 '-an',
                 '-y', temp_scaled
             ]
             logger.info("🚀 Scale: NVENC GPU encoding")
+
+            try:
+                scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=600)
+            except subprocess.TimeoutExpired:
+                logger.error("⏰ Scale timeout (10 dakika)")
+                scale_sonuc = type('obj', (object,), {'returncode': -1, 'stderr': 'Timeout'})()
+
+            if scale_sonuc.returncode != 0 or not dosya_gecerli_mi(temp_scaled):
+                error_msg = scale_sonuc.stderr[:500] if scale_sonuc.stderr else "No stderr output"
+                logger.warning(f"⚠️ NVENC Scale failed (code {scale_sonuc.returncode}): {error_msg}")
+                logger.info("🔄 CPU fallback...")
+                nvenc_failed = True
+
+                scale_komut_cpu = [
+                    'ffmpeg', '-v', 'warning',
+                    '-i', temp_video,
+                    '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
+                    '-c:v', 'libx264', '-preset', 'fast', '-crf', '18',
+                    '-pix_fmt', 'yuv420p', '-an', '-y', temp_scaled
+                ]
+                scale_sonuc = subprocess.run(scale_komut_cpu, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if scale_sonuc.returncode == 0 and dosya_gecerli_mi(temp_scaled):
+                    logger.info("✅ Video normalized (CPU fallback)")
+                    temp_video = temp_scaled
+                else:
+                    temp_scaled = temp_video
+            else:
+                logger.info("✅ Video normalized to 1920x1080")
+                temp_video = temp_scaled
         else:
             scale_komut = [
                 'ffmpeg', '-v', 'warning',
                 '-i', temp_video,
                 '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
-                '-c:v', 'libx264',
-                '-preset', 'fast',
-                '-crf', '18',
-                '-pix_fmt', 'yuv420p',
-                '-an',
-                '-y', temp_scaled
+                '-c:v', 'libx264', '-preset', 'fast', '-crf', '18',
+                '-pix_fmt', 'yuv420p', '-an', '-y', temp_scaled
             ]
             logger.info("🔧 Scale: CPU encoding")
-
-        # Scale işlemi - timeout ekle (uzun videolarda takılma önlenir)
-        try:
-            scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=600)
-        except subprocess.TimeoutExpired:
-            logger.error("⏰ Scale timeout (10 dakika)")
-            scale_sonuc = type('obj', (object,), {'returncode': -1, 'stderr': 'Timeout'})()
-
-        if scale_sonuc.returncode != 0 or not dosya_gecerli_mi(temp_scaled):
-            error_msg = scale_sonuc.stderr[:500] if scale_sonuc.stderr else "No stderr output"
-            logger.warning(f"⚠️ Scale failed (code {scale_sonuc.returncode}): {error_msg}")
-
-            # NVENC crash → CPU fallback
-            if encoder_type == 'nvidia':
-                logger.info("🔄 NVENC scale failed, trying CPU...")
-                nvenc_failed = True
-                scale_komut_cpu = [
-                    'ffmpeg', '-v', 'warning',
-                    '-i', temp_video,
-                    '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
-                    '-c:v', 'libx264',
-                    '-preset', 'fast',
-                    '-crf', '18',
-                    '-pix_fmt', 'yuv420p',
-                    '-an',
-                    '-y', temp_scaled
-                ]
-                scale_sonuc = subprocess.run(scale_komut_cpu, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                if scale_sonuc.returncode == 0 and dosya_gecerli_mi(temp_scaled):
-                    logger.info("✅ Video normalized to 1920x1080 (CPU fallback)")
-                    temp_video = temp_scaled
-                else:
-                    temp_scaled = temp_video
+            scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if scale_sonuc.returncode == 0 and dosya_gecerli_mi(temp_scaled):
+                logger.info("✅ Video normalized to 1920x1080")
+                temp_video = temp_scaled
             else:
                 temp_scaled = temp_video
-        else:
-            logger.info("✅ Video normalized to 1920x1080")
-            temp_video = temp_scaled
 
         audio_cfg = AUDIO_SETTINGS
 
