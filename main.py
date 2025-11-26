@@ -6044,30 +6044,6 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
         if downloads_temizlik > 0:
             print(f"   ✅ Downloads: {downloads_temizlik} geçici dosya silindi")
 
-        # ===== 🗜️  POST-RENDER SIKISTIRMA =====
-        # 30 dakikalık video için hedef: ~800 MB (yaklaşık 3.5 Mbps)
-        try:
-            print(f"\n" + "=" * 60)
-            print("🗜️  DOSYA BOYUTU OPTİMİZASYONU".center(60))
-            print("=" * 60)
-
-            current_size_mb = os.path.getsize(cikti_yolu) / (1024 * 1024)
-            print(f"   📊 Mevcut boyut: {current_size_mb:.0f} MB")
-
-            # Hedef boyut: dakika başına ~25-30 MB (YouTube için ideal)
-            # 30 dakika = ~800 MB hedef
-            target_size_mb = 800
-
-            if current_size_mb > target_size_mb:
-                compress_secim = input(f"\n   🗜️  Dosya {target_size_mb} MB'dan büyük. Sıkıştırılsın mı? [E/h]: ").strip().lower()
-
-                if compress_secim != 'h':
-                    post_render_compress(cikti_yolu, target_size_mb)
-            else:
-                print(f"   ✅ Boyut ideal aralıkta!")
-        except Exception as compress_err:
-            print(f"   ⚠️  Sıkıştırma kontrolü atlandı: {compress_err}")
-
         # ===== 🆕 YOUTUBE OPTİMİZASYONU: KALİTE KONTROLÜ ve METADATA =====
         if YOUTUBE_OPTIMIZATION_ENABLED:
             try:
@@ -6561,53 +6537,45 @@ def main():
             print(f"\n   ✅ Kaynak videolar korundu")
             print(f"   📄 Çıktı: {os.path.basename(sonuc)}")
 
-            # ===== 🗜️  POST-RENDER SIKISTIRMA =====
-            try:
-                current_size_mb = dosya_boyutu  # Zaten hesaplandı
-                target_size_mb = 800  # 30 dakika için ideal
+            # ===== ⏱️ DETAYLI RENDER İSTATİSTİKLERİ =====
+            print(f"\n" + "=" * 70)
+            print("📊 DETAYLI RENDER İSTATİSTİKLERİ".center(70))
+            print("=" * 70)
 
-                if current_size_mb > target_size_mb:
-                    print(f"\n" + "=" * 60)
-                    print("🗜️  DOSYA BOYUTU OPTİMİZASYONU".center(60))
-                    print("=" * 60)
-                    print(f"   📊 Mevcut boyut: {current_size_mb:.0f} MB")
-                    print(f"   🎯 Hedef: ~{target_size_mb} MB")
-
-                    compress_secim = input(f"\n   🗜️  Sıkıştırılsın mı? [E/h]: ").strip().lower()
-
-                    if compress_secim != 'h':
-                        compression_start = time.time()
-                        post_render_compress(sonuc, target_size_mb)
-                        compression_seconds = time.time() - compression_start
-                        # Boyutu güncelle
-                        dosya_boyutu = os.path.getsize(sonuc) / (1024 * 1024)
-                        print(f"   📊 Final boyut: {dosya_boyutu:.0f} MB")
-            except Exception as e:
-                print(f"   ⚠️  Sıkıştırma atlandı: {e}")
-
-            # ===== ⏱️ RENDER ZAMANLAMA BİLGİSİ =====
-            print(f"\n" + "=" * 60)
-            print("⏱️  RENDER ZAMANLAMA".center(60))
-            print("=" * 60)
-            print(f"   🕐 Başlangıç: {render_start_datetime.strftime('%H:%M:%S')}")
-            print(f"   🕑 Bitiş:     {render_end_datetime.strftime('%H:%M:%S')}")
-
+            # Zaman bilgileri
+            print(f"\n   ⏱️  ZAMAN:")
+            print(f"   ├── Başlangıç:     {render_start_datetime.strftime('%H:%M:%S')}")
+            print(f"   ├── Bitiş:         {render_end_datetime.strftime('%H:%M:%S')}")
             render_mins = int(render_elapsed_seconds // 60)
             render_secs = int(render_elapsed_seconds % 60)
-            print(f"   ⏱️  Render:   {render_mins}:{render_secs:02d}")
+            print(f"   └── Toplam Süre:   {render_mins}:{render_secs:02d} ({render_elapsed_seconds:.1f}s)")
 
-            if compression_seconds > 0:
-                comp_mins = int(compression_seconds // 60)
-                comp_secs = int(compression_seconds % 60)
-                print(f"   🗜️  Sıkıştırma: {comp_mins}:{comp_secs:02d}")
+            # Video bilgileri
+            print(f"\n   📹 VİDEO:")
+            print(f"   ├── Çıktı Süresi:  {sure_formatla(gercek_sure)}")
+            print(f"   ├── Dosya Boyutu:  {dosya_boyutu:.1f} MB")
+            if gercek_sure > 0:
+                bitrate_mbps = (dosya_boyutu * 8) / gercek_sure
+                print(f"   ├── Bitrate:       {bitrate_mbps:.2f} Mbps")
+                render_ratio = gercek_sure / render_elapsed_seconds if render_elapsed_seconds > 0 else 0
+                print(f"   └── Hız Oranı:     {render_ratio:.1f}x realtime")
 
-                total_seconds = render_elapsed_seconds + compression_seconds
-                total_mins = int(total_seconds // 60)
-                total_secs = int(total_seconds % 60)
-                print(f"   ⏳ Toplam:   {total_mins}:{total_secs:02d}")
+            # Klip bilgileri
+            print(f"\n   🎬 KLİP:")
+            print(f"   ├── Toplam Klip:   {len(playlist)}")
+            if render_elapsed_seconds > 0:
+                clips_per_min = len(playlist) / (render_elapsed_seconds / 60)
+                print(f"   └── Klip/dakika:   {clips_per_min:.1f}")
 
-            print("=" * 60)
-            # ===== ZAMANLAMA BİLGİSİ BİTİŞ =====
+            # Encoder bilgisi
+            print(f"\n   🖥️  ENCODER:")
+            print(f"   ├── Tip:           {encoder_type.upper()}")
+            if encoder_type == 'nvidia':
+                print(f"   └── GPU:           NVENC (RTX 5060 Ti)")
+            else:
+                print(f"   └── Mode:          Software")
+
+            print(f"\n" + "=" * 70)
 
         else:
             print(f"\n❌ Hata: {sonuc}")
