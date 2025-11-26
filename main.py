@@ -5001,22 +5001,12 @@ def klip_isle_parallel(args):
 
                 final_audio_filtre = ','.join(tum_audio_filtreler) if tum_audio_filtreler else None
 
-                # ===== 🚀 NVDEC ENABLED - GPU DECODE =====
-                # GPU decode → CPU filters → GPU encode
-                # Not: hwaccel_output_format yok çünkü CPU filtreleri kullanılıyor
-                if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and current_encoder_type == 'nvidia':
-                    # NVDEC hardware decoding (frames otomatik CPU'ya iner)
-                    komut = [
-                        'ffmpeg', '-v', 'error', '-stats',
-                        '-hwaccel', 'cuda',
-                        '-hwaccel_device', '0',
-                        '-i', item['dosya']
-                    ]
-                    if klip_index == 1:
-                        logger.debug(f"🚀 NVDEC: GPU decode → CPU filters → GPU encode")
-                else:
-                    # CPU decode fallback
-                    komut = ['ffmpeg', '-v', 'error', '-stats', '-i', item['dosya']]
+                # ===== CPU DECODE + GPU ENCODE =====
+                # hwaccel cuda KALDIRILDI: Küçük dosyalarda GPU↔CPU transfer overhead
+                # CPU decode (hızlı) → CPU filters → GPU encode (hızlı)
+                komut = ['ffmpeg', '-v', 'error', '-stats', '-i', item['dosya']]
+                if klip_index == 1 and current_encoder_type == 'nvidia':
+                    logger.debug(f"🚀 CPU decode → CPU filters → NVENC encode")
 
                 if final_video_filtre:
                     komut.extend(['-vf', final_video_filtre])
