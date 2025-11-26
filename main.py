@@ -5028,6 +5028,11 @@ def klip_isle_parallel(args):
 
                     final_video_filtre = ','.join(tum_video_filtreler) if tum_video_filtreler else None
 
+                    # ✅ FALLBACK: Eğer hiç video filtre yoksa, EN AZINDAN scale ekle!
+                    if not final_video_filtre:
+                        final_video_filtre = 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,fps=30'
+                        logger.warning(f"⚠️ Klip {klip_index}: Video filtre yok, fallback scale eklendi")
+
                     # Audio filtreleri birleştir
                     tum_audio_filtreler = []
                     if ses_filtre:
@@ -5046,15 +5051,19 @@ def klip_isle_parallel(args):
                 if klip_index == 1 and current_encoder_type == 'nvidia':
                     logger.debug(f"🚀 CPU decode → CPU filters (8 threads) → NVENC encode")
 
-                if final_video_filtre:
-                    komut.extend(['-vf', final_video_filtre])
-                    # Detailed logging moved to debug
-                    if klip_index == 1:
-                        logger.debug(f"🎬 Klip {klip_index} video filter: {len(final_video_filtre)} chars")
-                        if cinematic_fx:
-                            fx_list = [k for k, v in cinematic_fx.items() if v is not None]
-                            if fx_list:
-                                logger.debug(f"   Effects: {', '.join(fx_list)}")
+                # ✅ KRİTİK: HER ZAMAN scale filtresi uygula (464x688 gibi boyutları önle)
+                if not final_video_filtre:
+                    final_video_filtre = 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,fps=30'
+                    logger.warning(f"⚠️ Klip {klip_index}: Fallback scale eklendi")
+
+                komut.extend(['-vf', final_video_filtre])
+                # Detailed logging moved to debug
+                if klip_index == 1:
+                    logger.debug(f"🎬 Klip {klip_index} video filter: {len(final_video_filtre)} chars")
+                    if cinematic_fx:
+                        fx_list = [k for k, v in cinematic_fx.items() if v is not None]
+                        if fx_list:
+                            logger.debug(f"   Effects: {', '.join(fx_list)}")
 
                 if final_audio_filtre:
                     komut.extend(['-af', final_audio_filtre])
