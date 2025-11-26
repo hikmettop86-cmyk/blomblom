@@ -5590,20 +5590,32 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
         except:
             pass
 
-        # Scale için: NVENC GPU encoding (4 worker limiti ile stabil)
-        # Parallel worker sayısı düşürüldü → NVENC session conflict yok
+        # Scale için: NVENC GPU encoding
         nvenc_failed = False
+
+        # ✅ Input video kontrolü
+        if not dosya_gecerli_mi(temp_video):
+            logger.error(f"❌ Input video geçersiz: {temp_video}")
+            return False, "Concat video geçersiz"
+
+        # Input video boyutunu logla
+        probe_cmd = ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+                     '-show_entries', 'stream=width,height,duration', '-of', 'csv=p=0', temp_video]
+        probe_result = subprocess.run(probe_cmd, capture_output=True, text=True)
+        if probe_result.returncode == 0:
+            logger.info(f"📹 Input video: {probe_result.stdout.strip()}")
 
         if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
             nv_settings = QUALITY_SETTINGS['nvidia']
+            # ✅ Basitleştirilmiş NVENC komutu - daha az parametre = daha az hata
             scale_komut = [
-                'ffmpeg', '-v', 'warning',
+                'ffmpeg', '-v', 'error',  # error seviyesi - daha fazla detay
                 '-i', temp_video,
-                '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
+                '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p',
                 '-c:v', 'h264_nvenc',
-                '-preset', nv_settings['preset'],
+                '-preset', 'p4',  # Sabit preset (config'den gelen sorunlu olabilir)
+                '-rc', 'vbr',
                 '-b:v', '15M',
-                '-pix_fmt', 'yuv420p',
                 '-an',
                 '-y', temp_scaled
             ]
@@ -5622,12 +5634,16 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             ]
             logger.info("🔧 Scale: CPU encoding")
 
-        # Scale işlemi
-        scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # Scale işlemi - timeout ekle (uzun videolarda takılma önlenir)
+        try:
+            scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=600)
+        except subprocess.TimeoutExpired:
+            logger.error("⏰ Scale timeout (10 dakika)")
+            scale_sonuc = type('obj', (object,), {'returncode': -1, 'stderr': 'Timeout'})()
 
         if scale_sonuc.returncode != 0 or not dosya_gecerli_mi(temp_scaled):
-            error_msg = scale_sonuc.stderr[:300] if scale_sonuc.stderr else "No output"
-            logger.warning(f"⚠️ Scale failed: {error_msg}")
+            error_msg = scale_sonuc.stderr[:500] if scale_sonuc.stderr else "No stderr output"
+            logger.warning(f"⚠️ Scale failed (code {scale_sonuc.returncode}): {error_msg}")
 
             # NVENC crash → CPU fallback
             if encoder_type == 'nvidia':
