@@ -5556,16 +5556,17 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
         temp_scaled = os.path.join(temp_klasor, 'merged_scaled.mp4')
         logger.info("🔧 Normalizing video resolution to 1920x1080...")
 
-        # Scale için GPU encoding - CUDA hwaccel + scale_cuda kullan
+        # Scale için GPU encoding - scale_npp kullan (NVIDIA önerisi)
         if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
             nv_settings = QUALITY_SETTINGS['nvidia']
-            # ✅ Full GPU pipeline: CUDA decode → scale_cuda → NVENC encode
+            # ✅ Full GPU pipeline: CUDA decode → scale_npp → NVENC encode
+            # scale_npp daha stabil (NVIDIA dokümanı önerisi)
             scale_komut = [
-                'ffmpeg', '-v', 'warning',
+                'ffmpeg', '-v', 'warning', '-y',
                 '-hwaccel', 'cuda',
                 '-hwaccel_output_format', 'cuda',
                 '-i', temp_video,
-                '-vf', 'scale_cuda=1920:1080:force_original_aspect_ratio=decrease,hwdownload,format=nv12,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
+                '-vf', 'scale_npp=1920:1080:interp_algo=lanczos',
                 '-c:v', 'h264_nvenc',
                 '-preset', nv_settings['preset'],
                 '-rc', nv_settings['rc'],
@@ -5573,11 +5574,10 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 '-maxrate', nv_settings['maxrate'],
                 '-bufsize', nv_settings['bufsize'],
                 '-profile:v', nv_settings['profile'],
-                '-pix_fmt', 'yuv420p',
                 '-an',
-                '-y', temp_scaled
+                temp_scaled
             ]
-            logger.info("🚀 Scale: Full GPU pipeline (CUDA + NVENC)")
+            logger.info("🚀 Scale: Full GPU pipeline (scale_npp + NVENC)")
         else:
             scale_komut = [
                 'ffmpeg', '-v', 'warning',
