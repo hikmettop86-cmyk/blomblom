@@ -5566,26 +5566,23 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
         except:
             pass
 
-        # Scale için hibrit yaklaşım: CPU scale + GPU encode
+        # Scale için hibrit yaklaşım: CUDA decode + CPU scale + GPU encode
         # (scale_npp için libnpp gerekli, çoğu FFmpeg build'inde yok)
         if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
             nv_settings = QUALITY_SETTINGS['nvidia']
-            # ✅ Hibrit: CPU decode/scale → NVENC encode
+            # ✅ CUDA decode → CPU scale → NVENC encode (basit parametreler)
             scale_komut = [
                 'ffmpeg', '-v', 'warning', '-y',
+                '-hwaccel', 'cuda',  # GPU decode
                 '-i', temp_video,
-                '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p',
+                '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
                 '-c:v', 'h264_nvenc',
                 '-preset', nv_settings['preset'],
-                '-rc', nv_settings['rc'],
-                '-b:v', nv_settings['bitrate'],
-                '-maxrate', nv_settings['maxrate'],
-                '-bufsize', nv_settings['bufsize'],
-                '-profile:v', nv_settings['profile'],
+                '-b:v', '15M',  # Basit bitrate (complex rc ayarları crash yapabilir)
                 '-an',
                 temp_scaled
             ]
-            logger.info("🚀 Scale: Hibrit (CPU scale + NVENC encode)")
+            logger.info("🚀 Scale: CUDA decode + NVENC encode")
         else:
             scale_komut = [
                 'ffmpeg', '-v', 'warning',
