@@ -5615,7 +5615,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             logger.error(f"❌ Input video geçersiz: {temp_video}")
             return False, "Concat video geçersiz"
 
-        # Input video boyutunu kontrol et - 1920x1080'e yakınsa scale'i atla!
+        # Input video boyutunu kontrol et - SADECE TAM 1920x1080 ise scale'i atla!
         probe_cmd = ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
                      '-show_entries', 'stream=width,height,duration', '-of', 'csv=p=0', temp_video]
         probe_result = subprocess.run(probe_cmd, capture_output=True, text=True)
@@ -5628,13 +5628,12 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 duration = float(parts[2]) if len(parts) > 2 else 0
                 logger.info(f"📹 Input video: {width}x{height}, {duration:.1f}s")
 
-                # ✅ Toleranslı kontrol: 1920x1080'e yakınsa (±10 piksel) scale'i atla
-                # Fingerprint filtreleri 1918x1078 gibi küçük farklar oluşturabiliyor
-                width_ok = abs(width - 1920) <= 10
-                height_ok = abs(height - 1080) <= 10
-                if width_ok and height_ok:
-                    logger.info(f"✅ Video boyutu yeterli ({width}x{height} ≈ 1920x1080) - scale atlanıyor!")
+                # ✅ SADECE TAM 1920x1080 ise atla (tolerans kaldırıldı)
+                if width == 1920 and height == 1080:
+                    logger.info(f"✅ Video boyutu TAM 1920x1080 - scale atlanıyor!")
                     skip_scale = True
+                else:
+                    logger.info(f"⚠️ Video boyutu {width}x{height} != 1920x1080 - scale gerekli")
             except Exception as e:
                 logger.warning(f"⚠️ Video boyutu okunamadı: {e}")
 
