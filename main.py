@@ -4971,14 +4971,14 @@ def klip_isle_parallel(args):
     # Cinematic effects oluştur (30+ farklı efekt!)
     cinematic_fx = cinematic_effects_uret(klip_index, secilen_efektler)
 
-    # ❌ CACHE GEÇİCİ OLARAK DEVRE DIŞI - resolution sorununu bulmak için
-    # cached = cache_kontrol(item['dosya'], item['varyasyon'])
-    # if cached:
-    #     try:
-    #         shutil.copy2(cached, klip_dosya)
-    #         return (klip_index, True, klip_dosya, "cache")
-    #     except:
-    #         pass
+    # Cache kontrolü
+    cached = cache_kontrol(item['dosya'], item['varyasyon'])
+    if cached:
+        try:
+            shutil.copy2(cached, klip_dosya)
+            return (klip_index, True, klip_dosya, "cache")
+        except:
+            pass
 
     # Encoder seçimi
     encoders_to_try = []
@@ -5055,10 +5055,6 @@ def klip_isle_parallel(args):
                 if not final_video_filtre:
                     final_video_filtre = 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,fps=30'
                     logger.warning(f"⚠️ Klip {klip_index}: Fallback scale eklendi")
-
-                # ✅ DEBUG: İlk 3 klip için filter'ı logla
-                if klip_index <= 3:
-                    logger.info(f"🎬 Klip {klip_index} VF: {final_video_filtre[:100]}...")
 
                 komut.extend(['-vf', final_video_filtre])
                 # Detailed logging moved to debug
@@ -5354,23 +5350,7 @@ def klip_isle_parallel(args):
                 )
 
                 if sonuc.returncode == 0 and dosya_gecerli_mi(klip_dosya):
-                    # ✅ DEBUG: Klip boyutunu kontrol et
-                    if klip_index <= 5:
-                        try:
-                            probe = subprocess.run(
-                                ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
-                                 '-show_entries', 'stream=width,height', '-of', 'csv=p=0', klip_dosya],
-                                capture_output=True, text=True, timeout=10
-                            )
-                            if probe.returncode == 0:
-                                dims = probe.stdout.strip()
-                                logger.info(f"📐 Klip {klip_index} boyutu: {dims} (beklenen: 1920,1080)")
-                                if dims != "1920,1080":
-                                    logger.error(f"❌ YANLIŞ BOYUT! Klip {klip_index}: {dims}")
-                        except:
-                            pass
-
-                    # cache_kaydet(klip_dosya, item['dosya'], item['varyasyon'])  # Cache devre dışı
+                    cache_kaydet(klip_dosya, item['dosya'], item['varyasyon'])
 
                     # ✅ İYİLEŞTİRİLMİŞ: GPU→CPU fallback bilgilendirmesi
                     if current_encoder_type == 'cpu' and encoder_type != 'cpu':
