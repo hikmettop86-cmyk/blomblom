@@ -5571,9 +5571,25 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
         except:
             pass
 
-        # Scale için: CPU kullan (RTX 5060 Ti'da concat video + NVENC crash yapıyor)
-        # NVENC'i subtitle encoding için sakla (asıl zaman kazancı orada)
-        if True:  # Her zaman CPU scale kullan
+        # Scale için: NVENC GPU encoding (4 worker limiti ile stabil)
+        # Parallel worker sayısı düşürüldü → NVENC session conflict yok
+        nvenc_failed = False
+
+        if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
+            nv_settings = QUALITY_SETTINGS['nvidia']
+            scale_komut = [
+                'ffmpeg', '-v', 'warning',
+                '-i', temp_video,
+                '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
+                '-c:v', 'h264_nvenc',
+                '-preset', nv_settings['preset'],
+                '-b:v', '15M',
+                '-pix_fmt', 'yuv420p',
+                '-an',
+                '-y', temp_scaled
+            ]
+            logger.info("🚀 Scale: NVENC GPU encoding")
+        else:
             scale_komut = [
                 'ffmpeg', '-v', 'warning',
                 '-i', temp_video,
@@ -5587,17 +5603,39 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             ]
             logger.info("🔧 Scale: CPU encoding")
 
-        # Scale işlemi (CPU - hızlı ve güvenilir)
-        nvenc_failed = False  # NVENC'i subtitle için kullanmaya devam et
+        # Scale işlemi
         scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         if scale_sonuc.returncode != 0 or not dosya_gecerli_mi(temp_scaled):
             error_msg = scale_sonuc.stderr[:300] if scale_sonuc.stderr else "No output"
             logger.warning(f"⚠️ Scale failed: {error_msg}")
-            temp_scaled = temp_video  # Fallback to original
+
+            # NVENC crash → CPU fallback
+            if encoder_type == 'nvidia':
+                logger.info("🔄 NVENC scale failed, trying CPU...")
+                nvenc_failed = True
+                scale_komut_cpu = [
+                    'ffmpeg', '-v', 'warning',
+                    '-i', temp_video,
+                    '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
+                    '-c:v', 'libx264',
+                    '-preset', 'fast',
+                    '-crf', '18',
+                    '-pix_fmt', 'yuv420p',
+                    '-an',
+                    '-y', temp_scaled
+                ]
+                scale_sonuc = subprocess.run(scale_komut_cpu, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if scale_sonuc.returncode == 0 and dosya_gecerli_mi(temp_scaled):
+                    logger.info("✅ Video normalized to 1920x1080 (CPU fallback)")
+                    temp_video = temp_scaled
+                else:
+                    temp_scaled = temp_video
+            else:
+                temp_scaled = temp_video
         else:
             logger.info("✅ Video normalized to 1920x1080")
-            temp_video = temp_scaled  # Use scaled version
+            temp_video = temp_scaled
 
         audio_cfg = AUDIO_SETTINGS
 
