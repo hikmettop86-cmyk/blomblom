@@ -130,7 +130,7 @@ except ImportError as e:
 
 # Import yeni config modülleri
 try:
-    from config import METADATA_RANDOMIZATION, UPLOAD_STRATEGY, ADVANCED_QUALITY_CHECKS, TURBO_MODE
+    from config import METADATA_RANDOMIZATION, UPLOAD_STRATEGY, ADVANCED_QUALITY_CHECKS, TURBO_MODE, GPU_SCALE_ENABLED
     from effects import EFFECT_MODE, EFFECT_BALANCING
 except ImportError:
     # Eski config kullanılıyor, varsayılan değerler
@@ -140,6 +140,7 @@ except ImportError:
     EFFECT_MODE = 'medium'
     EFFECT_BALANCING = {'enabled': False}
     TURBO_MODE = False
+    GPU_SCALE_ENABLED = False
 
 # ==================== FONT GENİŞLİK HESAPLAMA SİSTEMİ ====================
 
@@ -2616,19 +2617,33 @@ def gelismis_varyasyon_uret(video_ad, varyasyon_no):
     }
 
 
-def gelismis_video_filtre_olustur(varyasyon, subtitle_config=None, cinematic_effects=None):
-    """🆕 Gelişmiş video filtreleri + TÜM CAPCUT PLUS EFEKTLER"""
+def gelismis_video_filtre_olustur(varyasyon, subtitle_config=None, cinematic_effects=None, use_gpu_scale=False):
+    """🆕 Gelişmiş video filtreleri + TÜM CAPCUT PLUS EFEKTLER
+
+    use_gpu_scale: True ise scale_cuda kullan (NVENC aktifken)
+    """
     filtreler = []
 
     # 1. RESOLUTION NORMALIZATION (1920x1080)
     video_output = VIDEO_OUTPUT
     target_width, target_height = video_output['resolution'].split('x')
 
-    # 🚀 PERFORMANCE: bicubic daha hızlı, lanczos kadar keskin değil ama yeterli
-    filtreler.append(
-        f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease:flags=bicubic,"
-        f"pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2"
-    )
+    # 🚀 GPU SCALE: scale_cuda varsa kullan (daha hızlı)
+    if use_gpu_scale:
+        # GPU scale_cuda - hwupload/hwdownload ile
+        # Not: scale_cuda force_original_aspect_ratio desteklemiyor, o yüzden
+        # önce CPU'da aspect ratio hesapla, sonra GPU'da scale yap
+        filtreler.append(
+            f"hwupload_cuda,"
+            f"scale_cuda={target_width}:{target_height}:interp_algo=lanczos,"
+            f"hwdownload,format=nv12"
+        )
+    else:
+        # CPU scale - bicubic + aspect ratio koruma
+        filtreler.append(
+            f"scale={target_width}:{target_height}:force_original_aspect_ratio=decrease:flags=bicubic,"
+            f"pad={target_width}:{target_height}:(ow-iw)/2:(oh-ih)/2"
+        )
 
     # 2. FRAME RATE NORMALIZATION (30fps)
     filtreler.append(f"fps={video_output['fps']}")
@@ -4981,12 +4996,17 @@ def klip_isle_parallel(args):
                         logger.info("🚀 TURBO MODE: Minimal filtreler (hızlı render)")
                 else:
                     # Normal mod - Filtreler + CINEMATIC EFFECTS
+                    # GPU scale (scale_cuda) - config.py'den kontrol
+                    use_gpu = GPU_SCALE_ENABLED and GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and current_encoder_type == 'nvidia'
                     video_filtre = gelismis_video_filtre_olustur(
                         item['varyasyon'],
                         subtitle_config=None,
-                        cinematic_effects=cinematic_fx
+                        cinematic_effects=cinematic_fx,
+                        use_gpu_scale=use_gpu
                     )
                     ses_filtre = gelismis_audio_filtre_olustur(item['varyasyon'])
+                    if klip_index == 1 and use_gpu:
+                        logger.info("🚀 GPU scale_cuda aktif (diğer efektler CPU)")
 
                     # Fingerprint filtreleri
                     fp_video_filtre = fingerprint_video_filtresi(fp_params)

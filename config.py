@@ -24,15 +24,22 @@ __all__ = [
     'SUBTITLE_FONTS', 'STORY_CHANNEL_PRESET',
     'ADVANCED_QUALITY_CHECKS', 'METADATA_RANDOMIZATION',
     'UPLOAD_STRATEGY', 'ENGAGEMENT_OPTIMIZATION',
-    'TURBO_MODE'
+    'TURBO_MODE', 'GPU_SCALE_ENABLED'
 ]
 
 # ============================================================================
-# 🚀 TURBO MODE - UZUN VİDEOLAR İÇİN HIZLI RENDER
+# 🚀 RENDER HIZLANDIRMA AYARLARI
 # ============================================================================
-# True: Efektler atlanır, sadece scale + NVENC (5-10x hızlı)
-# False: Normal mod - tüm efektler uygulanır
-TURBO_MODE = False  # 👈 Uzun videolarda True yapın!
+
+# TURBO MODE: Efektler atlanır, sadece scale + NVENC
+# True: 5-10x hızlı (efektsiz)
+# False: Normal mod - tüm efektler
+TURBO_MODE = False
+
+# GPU SCALE: scale_cuda kullan (deneysel)
+# True: GPU'da scale (bazı sistemlerde sorun çıkarabilir)
+# False: CPU'da scale (güvenli, varsayılan)
+GPU_SCALE_ENABLED = False
 
 # ============================================================================
 # KLASÖR YAPISI
