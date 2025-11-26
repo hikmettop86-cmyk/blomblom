@@ -5562,6 +5562,8 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 torch.cuda.synchronize()
+                import time
+                time.sleep(0.5)  # GPU'ya kaynak bırakması için zaman ver
                 logger.debug("🧹 CUDA cache temizlendi (PyTorch → FFmpeg geçişi)")
         except:
             pass
@@ -5597,17 +5599,30 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             ]
             logger.info("🔧 Scale: CPU encoding")
 
-        scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # ✅ NVENC retry mekanizması (aralıklı crash için)
+        nvenc_failed = False
+        scale_sonuc = None
+
+        if encoder_type == 'nvidia':
+            for attempt in range(2):  # 2 deneme
+                scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if scale_sonuc.returncode == 0 and dosya_gecerli_mi(temp_scaled):
+                    break  # Başarılı
+                if attempt == 0:
+                    logger.warning(f"⚠️ NVENC attempt 1 failed, retrying...")
+                    import time
+                    time.sleep(1)  # 1 saniye bekle ve tekrar dene
+        else:
+            scale_sonuc = subprocess.run(scale_komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         # ✅ NVENC Access Violation (3221225477) durumunda CPU fallback
-        nvenc_failed = False
         if scale_sonuc.returncode != 0 or not dosya_gecerli_mi(temp_scaled):
             error_msg = scale_sonuc.stderr[:300] if scale_sonuc.stderr else scale_sonuc.stdout[:300] if scale_sonuc.stdout else "No output"
             logger.warning(f"⚠️ Scale failed (code {scale_sonuc.returncode}): {error_msg}")
 
             # NVENC crash (Access Violation) → CPU ile tekrar dene
-            if scale_sonuc.returncode == 3221225477 and encoder_type == 'nvidia':
-                logger.info("🔄 NVENC crashed, retrying scale with CPU...")
+            if encoder_type == 'nvidia':
+                logger.info("🔄 NVENC failed after retries, falling back to CPU...")
                 nvenc_failed = True
                 scale_komut_cpu = [
                     'ffmpeg', '-v', 'warning',
