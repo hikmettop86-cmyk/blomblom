@@ -5411,10 +5411,13 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
     cpu_cores = multiprocessing.cpu_count()
 
-    # MAXIMUM PERFORMANCE MODE: Use all CPU cores + GPU simultaneously
-    # GPU handles encoding (NVENC), CPU handles filters/audio/decoding
+    # NVENC SESSION LIMIT: RTX kartları 3-5 eşzamanlı NVENC session destekler
+    # Çok fazla parallel worker → "OpenEncodeSessionEx failed: incompatible client key"
+    # Optimal: 3-4 worker (NVENC session limit içinde kalır)
     if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
-        max_workers = cpu_cores  # Use ALL cores when GPU is available
+        # NVENC için max 4 worker (session limit aşılmasın)
+        max_workers = min(4, cpu_cores)
+        logger.info(f"🚀 NVENC mode: {max_workers} parallel workers (session limit)")
     else:
         max_workers = max(2, cpu_cores // 2)
 
