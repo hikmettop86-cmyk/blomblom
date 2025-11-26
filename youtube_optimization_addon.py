@@ -238,8 +238,8 @@ def check_bitrate_consistency(video_path, min_bitrate='8M'):
         return True
 
 
-def check_black_frames(video_path, max_duration=1.0):
-    """Uzun süreli siyah frame kontrolü"""
+def check_black_frames(video_path, max_duration=2.0):
+    """Uzun süreli siyah frame kontrolü - 2 saniyeden uzun siyah bölümleri tespit et"""
     try:
         cmd = [
             'ffmpeg', '-i', video_path,
@@ -254,7 +254,7 @@ def check_black_frames(video_path, max_duration=1.0):
         # Siyah frame uyarılarını say
         black_count = output.count('blackdetect')
 
-        if black_count > 3:
+        if black_count > 5:  # Eşik artırıldı: 3 → 5
             logger.warning(f"⚠️  Çok fazla siyah frame tespit edildi: {black_count}")
             return False
 

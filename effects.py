@@ -724,7 +724,7 @@ TRANSITION_EFFECTS = {
             'description': 'Smooth fade transition',
         },
         'fadeblack': {
-            'weight': 0.12,  # Artırıldı
+            'weight': 0.03,  # Azaltıldı - siyah frame sorununu önler
             'description': 'Fade through black',
         },
         'fadewhite': {
