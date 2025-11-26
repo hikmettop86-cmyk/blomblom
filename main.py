@@ -5703,9 +5703,19 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
             print(f"   📝 Alt yazılar ekleniyor: {os.path.basename(ass_file)}")
 
-            # ✅ FFmpeg subtitles filter - Windows path
-            # Double quote ile path koruma (colon escape çalışmadı)
-            ass_path_escaped = f'"{ass_path}"'
+            # ✅ FFmpeg subtitles filter - Windows path sorunu çözümü
+            # ASS dosyasını input video ile aynı klasöre kopyala
+            import shutil
+            temp_ass_name = 'subs_temp.ass'
+            input_dir = os.path.dirname(temp_video)
+            temp_ass_path = os.path.join(input_dir, temp_ass_name)
+            try:
+                shutil.copy2(ass_file, temp_ass_path)
+                # Sadece dosya adı kullan (path olmadan)
+                ass_path_escaped = temp_ass_name
+            except Exception as e:
+                logger.warning(f"ASS kopyalama hatası: {e}, orijinal path kullanılıyor")
+                ass_path_escaped = "'" + ass_path.replace(':', '\\\\:') + "'"
 
             # Subtitle encoding için GPU - klip encoding ile aynı parametreler
             # ✅ nvenc_failed durumunda CPU kullan (scale'de crash olduysa)
@@ -5755,7 +5765,8 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             '-y', cikti_yolu
         ])
 
-        sonuc = subprocess.run(komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # ✅ cwd=input_dir: FFmpeg çalışma dizini subtitle dosyasının olduğu yer
+        sonuc = subprocess.run(komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=input_dir)
 
         if sonuc.returncode != 0:
             error_msg = sonuc.stderr[:500] if sonuc.stderr else sonuc.stdout[:500] if sonuc.stdout else "No FFmpeg output"
@@ -5799,7 +5810,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 ])
 
                 print(f"   🔄 CPU ile tekrar deneniyor...")
-                sonuc = subprocess.run(komut_cpu, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                sonuc = subprocess.run(komut_cpu, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=input_dir)
 
                 if sonuc.returncode == 0:
                     logger.info(f"✅ Final encoding başarılı (CPU fallback)")
@@ -5843,10 +5854,17 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             print(f"   📝 Alt yazılar ekleniyor: {os.path.basename(subtitle_config['srt_file'])}")
 
             ass_file = subtitle_config['srt_file']
-            ass_path = ass_file.replace('\\', '/')
 
-            # ✅ FFmpeg subtitles filter - Windows path
-            ass_path_escaped = f'"{ass_path}"'
+            # ✅ FFmpeg subtitles filter - Windows path sorunu çözümü
+            import shutil
+            temp_ass_name = 'subs_temp.ass'
+            input_dir_nosound = os.path.dirname(temp_merged)
+            temp_ass_path_nosound = os.path.join(input_dir_nosound, temp_ass_name)
+            try:
+                shutil.copy2(ass_file, temp_ass_path_nosound)
+                ass_path_escaped = temp_ass_name
+            except:
+                ass_path_escaped = os.path.basename(ass_file)
 
             komut = [
                 'ffmpeg', '-v', 'warning',
@@ -5859,7 +5877,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 '-movflags', '+faststart',
                 '-y', cikti_yolu
             ]
-            sonuc = subprocess.run(komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            sonuc = subprocess.run(komut, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=input_dir_nosound)
 
             try:
                 os.remove(temp_merged)
