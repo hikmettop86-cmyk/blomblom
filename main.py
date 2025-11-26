@@ -5430,13 +5430,18 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
     cpu_cores = multiprocessing.cpu_count()
 
-    # NVENC SESSION LIMIT: RTX kartları 3-5 eşzamanlı NVENC session destekler
-    # Çok fazla parallel worker → "OpenEncodeSessionEx failed: incompatible client key"
-    # Optimal: 3-4 worker (NVENC session limit içinde kalır)
-    if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
-        # NVENC için max 4 worker (session limit aşılmasın)
+    # Worker sayısı stratejisi:
+    # - TURBO_MODE: 4 worker (minimal filtre, NVENC session limit önemli)
+    # - Normal mod: Daha fazla worker (CPU efektler darboğaz, NVENC fallback var)
+    if TURBO_MODE:
+        # Turbo: NVENC session limit için 4 worker
         max_workers = min(4, cpu_cores)
-        logger.info(f"🚀 NVENC mode: {max_workers} parallel workers (session limit)")
+        logger.info(f"🚀 TURBO mode: {max_workers} workers (NVENC optimized)")
+    elif GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
+        # Normal + GPU: CPU efektler darboğaz, daha fazla worker kullan
+        # NVENC başarısız olursa CPU fallback var
+        max_workers = max(4, cpu_cores // 2)  # En az 4, CPU'nun yarısına kadar
+        logger.info(f"🎬 Hybrid mode: {max_workers} workers (CPU effects + NVENC encode)")
     else:
         max_workers = max(2, cpu_cores // 2)
 
