@@ -5046,10 +5046,10 @@ def klip_isle_parallel(args):
                 # hwaccel cuda KALDIRILDI: Küçük dosyalarda GPU↔CPU transfer overhead
                 # CPU decode (hızlı) → CPU filters → GPU encode (hızlı)
                 komut = ['ffmpeg', '-v', 'error', '-stats',
-                         '-filter_threads', '8',  # ✅ Multithread filter işleme
+                         '-filter_threads', '16',  # ✅ Ryzen 9 5950X (16 core) için optimize
                          '-i', item['dosya']]
                 if klip_index == 1 and current_encoder_type == 'nvidia':
-                    logger.debug(f"🚀 CPU decode → CPU filters (8 threads) → NVENC encode")
+                    logger.debug(f"🚀 CPU decode → CPU filters (16 threads) → NVENC encode")
 
                 # ✅ KRİTİK: HER ZAMAN scale filtresi uygula (464x688 gibi boyutları önle)
                 if not final_video_filtre:
@@ -5450,16 +5450,16 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 logger.warning("ASS dosyası oluşturulamadı")
                 subtitle_config = None
 
-    cpu_cores = multiprocessing.cpu_count()  # Ryzen 5800X = 16 threads
+    cpu_cores = multiprocessing.cpu_count()  # Ryzen 9 5950X = 32 threads
 
     # Worker sayısı - MAKSİMUM (render sırasında başka işlem yok)
     if TURBO_MODE:
-        max_workers = min(4, cpu_cores)
+        max_workers = min(8, cpu_cores)  # Turbo modda da daha fazla worker
         logger.info(f"🚀 TURBO: {max_workers} workers")
     elif GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia':
-        # 🔥 FULL CPU: 16 thread → 15 worker (1 sistem için)
+        # 🔥 FULL CPU: 32 thread → 31 worker (1 sistem için)
         max_workers = cpu_cores - 1
-        logger.info(f"🔥 FULL CPU: {max_workers}/{cpu_cores} workers")
+        logger.info(f"🔥 FULL CPU: {max_workers}/{cpu_cores} workers (Ryzen 9 5950X)")
     else:
         max_workers = cpu_cores - 1
 
