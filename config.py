@@ -42,9 +42,10 @@ TURBO_MODE = False
 GPU_SCALE_ENABLED = False
 
 # KORNIA GPU FILTERS: PyTorch/Kornia ile GPU tabanlı video filtreleme
-# True: Kornia GPU (8-10x hızlı, blur/color/brightness GPU'da işlenir)
-# False: FFmpeg CPU filtreleri (klasik yöntem)
-KORNIA_GPU_FILTERS = True
+# ⚠️ DEVRE DIŞI: Multiprocessing ile uyumsuz (deadlock + GPU memory sorunu)
+# True: Kornia GPU (deneysel, tek worker'da çalışır)
+# False: FFmpeg CPU filtreleri (stabil, önerilen)
+KORNIA_GPU_FILTERS = False  # ❌ Kornia devre dışı - FFmpeg kullan
 
 # ============================================================================
 # KLASÖR YAPISI
