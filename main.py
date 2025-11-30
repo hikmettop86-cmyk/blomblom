@@ -26,6 +26,15 @@ from datetime import datetime, timedelta
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import shutil
 
+# ==================== FFMPEG PATH (RTX 50 serisi için güncel FFmpeg) ====================
+FFMPEG_PATH = r"C:\ffmpeg\bin\ffmpeg.exe"
+FFPROBE_PATH = r"C:\ffmpeg\bin\ffprobe.exe"
+
+# Fallback: PATH'te ara
+if not os.path.exists(FFMPEG_PATH):
+    FFMPEG_PATH = shutil.which('ffmpeg') or 'ffmpeg'
+    FFPROBE_PATH = shutil.which('ffprobe') or 'ffprobe'
+
 # ==================== LOGGING SETUP (İLK ÖNCE!) ====================
 logging.basicConfig(
     level=logging.INFO,
@@ -235,7 +244,7 @@ def gpu_durumunu_tespit_et():
                                 stderr=subprocess.PIPE,
                                 timeout=3)
         if result.returncode == 0:
-            test_cmd = ['ffmpeg', '-hide_banner', '-encoders']
+            test_cmd = [FFMPEG_PATH, '-hide_banner', '-encoders']
             test_result = subprocess.run(test_cmd,
                                          stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE,
@@ -250,7 +259,7 @@ def gpu_durumunu_tespit_et():
                 for test_preset in presets_to_try:
                     try:
                         test_encode = [
-                            'ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=1:size=256x256:rate=1',
+                            FFMPEG_PATH, '-f', 'lavfi', '-i', 'testsrc=duration=1:size=256x256:rate=1',
                             '-c:v', 'h264_nvenc', '-preset', test_preset, '-t', '0.5',
                             '-f', 'null', '-'
                         ]
@@ -273,7 +282,7 @@ def gpu_durumunu_tespit_et():
 
     # AMD kontrolü
     try:
-        test_cmd = ['ffmpeg', '-hide_banner', '-encoders']
+        test_cmd = [FFMPEG_PATH, '-hide_banner', '-encoders']
         result = subprocess.run(test_cmd,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
@@ -282,7 +291,7 @@ def gpu_durumunu_tespit_et():
         if 'h264_amf' in result.stdout:
             try:
                 test_encode = [
-                    'ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=1:size=1280x720:rate=1',
+                    FFMPEG_PATH, '-f', 'lavfi', '-i', 'testsrc=duration=1:size=1280x720:rate=1',
                     '-c:v', 'h264_amf', '-quality', 'speed', '-t', '1',
                     '-f', 'null', '-'
                 ]
@@ -300,7 +309,7 @@ def gpu_durumunu_tespit_et():
 
     # Intel QSV kontrolü
     try:
-        test_cmd = ['ffmpeg', '-hide_banner', '-encoders']
+        test_cmd = [FFMPEG_PATH, '-hide_banner', '-encoders']
         result = subprocess.run(test_cmd,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
@@ -309,7 +318,7 @@ def gpu_durumunu_tespit_et():
         if 'h264_qsv' in result.stdout:
             try:
                 test_encode = [
-                    'ffmpeg', '-f', 'lavfi', '-i', 'testsrc=duration=1:size=1280x720:rate=1',
+                    FFMPEG_PATH, '-f', 'lavfi', '-i', 'testsrc=duration=1:size=1280x720:rate=1',
                     '-c:v', 'h264_qsv', '-preset', 'fast', '-t', '1',
                     '-f', 'null', '-'
                 ]
@@ -368,7 +377,7 @@ def post_render_compress(input_path: str, target_size_mb: int = 500) -> bool:
     # Video süresini al
     try:
         probe_cmd = [
-            'ffprobe', '-v', 'error',
+            FFPROBE_PATH, '-v', 'error',
             '-show_entries', 'format=duration',
             '-of', 'default=noprint_wrappers=1:nokey=1',
             input_path
@@ -435,7 +444,7 @@ def post_render_compress(input_path: str, target_size_mb: int = 500) -> bool:
         # Pass 1 - Analiz
         print(f"\n   ⏳ Pass 1/2 - Analiz başlıyor...")
         pass1_cmd = [
-            'ffmpeg', '-y', '-i', input_path,
+            FFMPEG_PATH, '-y', '-i', input_path,
             '-c:v', 'libx264',
             '-preset', 'fast',  # Daha hızlı analiz
             '-b:v', f'{target_bitrate_kbps}k',
@@ -450,7 +459,7 @@ def post_render_compress(input_path: str, target_size_mb: int = 500) -> bool:
         # Pass 2 - Encoding
         print(f"\n   ⏳ Pass 2/2 - Encoding başlıyor...")
         pass2_cmd = [
-            'ffmpeg', '-y', '-i', input_path,
+            FFMPEG_PATH, '-y', '-i', input_path,
             '-c:v', 'libx264',
             '-preset', 'medium',
             '-b:v', f'{target_bitrate_kbps}k',
@@ -3172,7 +3181,7 @@ def banner():
 
 def ffmpeg_yuklu_mu():
     try:
-        subprocess.run(['ffmpeg', '-version'],
+        subprocess.run([FFMPEG_PATH, '-version'],
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE,
                        check=True,
@@ -3253,7 +3262,7 @@ def ses_dosyalarini_bul(klasor_yolu):
 def video_bilgisi_al(video_yolu):
     try:
         komut = [
-            'ffprobe', '-v', 'error',
+            FFPROBE_PATH, '-v', 'error',
             '-select_streams', 'v:0',
             '-show_entries', 'stream=width,height,duration,bit_rate,codec_name:format=duration',
             '-of', 'json', video_yolu
@@ -3288,7 +3297,7 @@ def video_bilgisi_al(video_yolu):
                     codec = stream['codec_name']
 
             test_komut = [
-                'ffmpeg', '-v', 'error',
+                FFMPEG_PATH, '-v', 'error',
                 '-i', video_yolu,
                 '-frames:v', '1',
                 '-f', 'null', '-'
@@ -3324,7 +3333,7 @@ def ses_bilgisi_al(ses_yolu):
             return None
 
         komut = [
-            'ffprobe', '-v', 'error',
+            FFPROBE_PATH, '-v', 'error',
             '-show_entries', 'format=duration',
             '-of', 'json', ses_yolu
         ]
@@ -3392,7 +3401,7 @@ def dosya_gecerli_mi(dosya_yolu, min_size_kb=None):
         # FFprobe ile video stream kontrolü
         try:
             komut = [
-                'ffprobe', '-v', 'error',
+                FFPROBE_PATH, '-v', 'error',
                 '-select_streams', 'v:0',
                 '-show_entries', 'stream=codec_type',
                 '-of', 'json', dosya_yolu
@@ -4688,7 +4697,7 @@ def sahne_tespiti_yap(video_yolu, threshold=None):
 
     try:
         komut = [
-            'ffmpeg', '-i', video_yolu,
+            FFMPEG_PATH, '-i', video_yolu,
             '-vf', f'select=gt(scene\\,{threshold}),showinfo',
             '-f', 'null', '-'
         ]
@@ -4742,7 +4751,7 @@ def sahne_bazli_segmentasyon(video_info, temp_klasor, scene_times):
             segment_dosya = os.path.join(temp_klasor, f"s_{segment_no:04d}.mp4")
 
             komut = [
-                'ffmpeg', '-v', 'error',
+                FFMPEG_PATH, '-v', 'error',
                 '-i', video_yolu,
                 '-ss', str(baslangic),
                 '-t', str(segment_suresi),
@@ -4765,7 +4774,7 @@ def sahne_bazli_segmentasyon(video_info, temp_klasor, scene_times):
     if sure - baslangic > 4:
         segment_dosya = os.path.join(temp_klasor, f"s_{segment_no:04d}.mp4")
         komut = [
-            'ffmpeg', '-v', 'error',
+            FFMPEG_PATH, '-v', 'error',
             '-i', video_yolu,
             '-ss', str(baslangic),
             '-c', 'copy',
@@ -4805,7 +4814,7 @@ def normal_segmentasyon(video_info, temp_klasor):
         segment_dosya = os.path.join(temp_klasor, f"s_{segment_no:04d}.mp4")
 
         komut = [
-            'ffmpeg', '-v', 'error',
+            FFMPEG_PATH, '-v', 'error',
             '-i', video_yolu,
             '-ss', str(baslangic),
             '-t', str(segment_suresi),
@@ -4916,7 +4925,7 @@ def metadata_randomize(video_yolu, cikti_yolu):
         fake_software = random.choice(software_tags)
 
         komut = [
-            'ffmpeg', '-v', 'error',
+            FFMPEG_PATH, '-v', 'error',
             '-i', video_yolu,
             '-map_metadata', '-1',
             '-fflags', '+bitexact',
@@ -5045,7 +5054,7 @@ def klip_isle_parallel(args):
                 # ===== CPU DECODE + GPU ENCODE =====
                 # hwaccel cuda KALDIRILDI: Küçük dosyalarda GPU↔CPU transfer overhead
                 # CPU decode (hızlı) → CPU filters → GPU encode (hızlı)
-                komut = ['ffmpeg', '-v', 'error', '-stats',
+                komut = [FFMPEG_PATH, '-v', 'error', '-stats',
                          '-filter_threads', '16',  # ✅ Ryzen 9 5950X (16 core) için optimize
                          '-i', item['dosya']]
                 if klip_index == 1 and current_encoder_type == 'nvidia':
@@ -5583,7 +5592,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
         # ✅ FIX: Video freeze sorunu - timestamp ve keyframe düzeltmeleri
         komut = [
-            'ffmpeg', '-v', 'warning',
+            FFMPEG_PATH, '-v', 'warning',
             '-fflags', '+genpts+igndts',  # Timestamp'leri yeniden oluştur
             '-f', 'concat',
             '-safe', '0',
@@ -5619,7 +5628,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             return False, "Concat video geçersiz"
 
         # Input video boyutunu kontrol et - scale gerekli mi?
-        probe_cmd = ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+        probe_cmd = [FFPROBE_PATH, '-v', 'error', '-select_streams', 'v:0',
                      '-show_entries', 'stream=width,height,duration', '-of', 'csv=p=0', temp_video]
         probe_result = subprocess.run(probe_cmd, capture_output=True, text=True)
 
@@ -5712,7 +5721,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
         # ✅ HWACCEL CUDA: GPU decode (B optimizasyonu)
         use_hwaccel = GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available'] and encoder_type == 'nvidia'
 
-        komut = ['ffmpeg', '-v', 'warning']
+        komut = [FFMPEG_PATH, '-v', 'warning']
 
         if use_hwaccel:
             # GPU hardware decode - input'tan önce gelir
@@ -5842,7 +5851,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
 
                 # Rebuild command with CPU encoder - TEK PASS (scale + subtitle birleşik)
                 komut_cpu = [
-                    'ffmpeg', '-v', 'warning',
+                    FFMPEG_PATH, '-v', 'warning',
                     '-i', temp_video,
                     '-i', ses_dosyasi,
                     '-map', '0:v',
@@ -5917,7 +5926,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
             temp_merged = os.path.join(temp_klasor, 'merged_temp.mp4')
 
             komut = [
-                'ffmpeg', '-v', 'warning',
+                FFMPEG_PATH, '-v', 'warning',
                 '-f', 'concat',
                 '-safe', '0',
                 '-i', concat_liste,
@@ -5945,7 +5954,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 ass_path_escaped = os.path.basename(ass_file)
 
             komut = [
-                'ffmpeg', '-v', 'warning',
+                FFMPEG_PATH, '-v', 'warning',
                 '-i', temp_merged,
                 '-vf', f'subtitles={ass_path_escaped}',
                 '-c:v', 'libx264',
@@ -5963,7 +5972,7 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
                 pass
         else:
             komut = [
-                'ffmpeg', '-v', 'warning',
+                FFMPEG_PATH, '-v', 'warning',
                 '-f', 'concat',
                 '-safe', '0',
                 '-i', concat_liste,
