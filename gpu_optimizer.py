@@ -98,7 +98,7 @@ if nvenc_info['available']:
     )
 
     # Build FFmpeg command
-    cmd = ['ffmpeg']
+    cmd = [FFMPEG_PATH]
     cmd.extend(hw_accel['input_params'])      # -hwaccel cuda ...
     cmd.extend(['-i', 'input.mp4'])
     cmd.extend(nvenc_params['video_params'])  # -c:v h264_nvenc ...
@@ -113,7 +113,17 @@ import json
 import logging
 import random
 import re
+import os
+import shutil
 from typing import Dict, List, Optional, Tuple, Any
+
+# ==================== FFMPEG PATH (RTX 50 serisi için güncel FFmpeg) ====================
+FFMPEG_PATH = r"C:\ffmpeg\bin\ffmpeg.exe"
+FFPROBE_PATH = r"C:\ffmpeg\bin\ffprobe.exe"
+
+if not os.path.exists(FFMPEG_PATH):
+    FFMPEG_PATH = shutil.which('ffmpeg') or 'ffmpeg'
+    FFPROBE_PATH = shutil.which('ffprobe') or 'ffprobe'
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -281,7 +291,7 @@ def detect_nvenc_support(gpu_id: int = 0) -> Dict[str, Any]:
 
         for encoder in GPU_OPTIMIZER_CONFIG['nvenc']['encoder_priority']:
             try:
-                cmd = ['ffmpeg', '-hide_banner', '-encoders']
+                cmd = [FFMPEG_PATH, '-hide_banner', '-encoders']
                 proc = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
 
                 if encoder in proc.stdout:
@@ -341,7 +351,7 @@ def detect_nvenc_support(gpu_id: int = 0) -> Dict[str, Any]:
 
         # 4. Check hardware acceleration support
         try:
-            cmd = ['ffmpeg', '-hide_banner', '-hwaccels']
+            cmd = [FFMPEG_PATH, '-hide_banner', '-hwaccels']
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
 
             if proc.returncode == 0:
@@ -373,7 +383,7 @@ def detect_nvenc_support(gpu_id: int = 0) -> Dict[str, Any]:
             for test_preset in presets_to_try:
                 try:
                     test_cmd = [
-                        'ffmpeg', '-y', '-v', 'error',
+                        FFMPEG_PATH, '-y', '-v', 'error',
                         '-f', 'lavfi', '-i', 'color=c=black:s=256x256:d=0.1',
                         '-c:v', encoder_name,
                         '-preset', test_preset,
@@ -898,7 +908,7 @@ def get_hardware_accel_params(
 
     Example:
         >>> hw = get_hardware_accel_params(use_cuda_filters=True)
-        >>> cmd = ['ffmpeg']
+        >>> cmd = [FFMPEG_PATH]
         >>> cmd.extend(hw['input_params'])  # Add before -i
         >>> cmd.extend(['-i', 'input.mp4'])
         >>> # Use hw['filter_replacements'] to replace scale with scale_cuda
@@ -1271,7 +1281,7 @@ def get_optimal_encoding_params(
         >>> params = get_optimal_encoding_params(quality_mode='balanced')
         >>> if params['use_gpu']:
         ...     print(f"✅ Using GPU: {params['expected_speedup']}x speedup")
-        ...     cmd = ['ffmpeg']
+        ...     cmd = [FFMPEG_PATH]
         ...     cmd.extend(params['hw_accel_params']['input_params'])
         ...     cmd.extend(['-i', 'input.mp4'])
         ...     cmd.extend(params['video_params'])

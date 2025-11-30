@@ -24,8 +24,17 @@ import json
 import os
 import time
 import logging
+import shutil
 from datetime import datetime, timedelta
 from collections import Counter
+
+# ==================== FFMPEG PATH (RTX 50 serisi için güncel FFmpeg) ====================
+FFMPEG_PATH = r"C:\ffmpeg\bin\ffmpeg.exe"
+FFPROBE_PATH = r"C:\ffmpeg\bin\ffprobe.exe"
+
+if not os.path.exists(FFMPEG_PATH):
+    FFMPEG_PATH = shutil.which('ffmpeg') or 'ffmpeg'
+    FFPROBE_PATH = shutil.which('ffprobe') or 'ffprobe'
 
 logger = logging.getLogger(__name__)
 
@@ -334,7 +343,7 @@ def detect_available_encoders():
     try:
         # Get encoder list
         result = subprocess.run(
-            ['ffmpeg', '-hide_banner', '-encoders'],
+            [FFMPEG_PATH, '-hide_banner', '-encoders'],
             capture_output=True, text=True, timeout=5
         )
 
@@ -348,7 +357,7 @@ def detect_available_encoders():
                 try:
                     # ✅ DÜZELTİLDİ: capture_output ve stderr=DEVNULL birlikte kullanılamaz!
                     test = subprocess.run(
-                        ['ffmpeg', '-y', '-v', 'error',
+                        [FFMPEG_PATH, '-y', '-v', 'error',
                          '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
                          '-c:v', 'h264_nvenc', '-preset', test_preset,
                          '-t', '0.5', '-f', 'null', '-'],
@@ -380,7 +389,7 @@ def detect_available_encoders():
         if 'h264_qsv' in result.stdout:
             try:
                 test = subprocess.run(
-                    ['ffmpeg', '-y', '-v', 'error',
+                    [FFMPEG_PATH, '-y', '-v', 'error',
                      '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
                      '-c:v', 'h264_qsv', '-t', '0.5', '-f', 'null', '-'],
                     stdout=subprocess.DEVNULL,
@@ -397,7 +406,7 @@ def detect_available_encoders():
         if 'h264_amf' in result.stdout:
             try:
                 test = subprocess.run(
-                    ['ffmpeg', '-y', '-v', 'error',
+                    [FFMPEG_PATH, '-y', '-v', 'error',
                      '-f', 'lavfi', '-i', 'testsrc=duration=0.5:size=256x256:rate=1',
                      '-c:v', 'h264_amf', '-t', '0.5', '-f', 'null', '-'],
                     stdout=subprocess.DEVNULL,

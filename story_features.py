@@ -8,7 +8,17 @@ Hook optimization, climax detection, pacing control
 import random
 import subprocess
 import json
+import os
+import shutil
 from typing import Dict, List, Tuple, Optional
+
+# ==================== FFMPEG PATH (RTX 50 serisi için güncel FFmpeg) ====================
+FFMPEG_PATH = r"C:\ffmpeg\bin\ffmpeg.exe"
+FFPROBE_PATH = r"C:\ffmpeg\bin\ffprobe.exe"
+
+if not os.path.exists(FFMPEG_PATH):
+    FFMPEG_PATH = shutil.which('ffmpeg') or 'ffmpeg'
+    FFPROBE_PATH = shutil.which('ffprobe') or 'ffprobe'
 
 # ============================================================================
 # 🎣 HOOK OPTIMIZER - İlk 3 Saniye Viral Efektler
@@ -138,7 +148,7 @@ def analyze_audio_energy(audio_file: str, segment_duration: float = 0.5) -> List
     try:
         # FFmpeg ile audio stats al
         cmd = [
-            'ffmpeg', '-i', audio_file,
+            FFMPEG_PATH, '-i', audio_file,
             '-af', f'astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level:file=-',
             '-f', 'null', '-'
         ]

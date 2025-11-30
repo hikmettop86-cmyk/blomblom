@@ -18,6 +18,15 @@ import logging
 import subprocess
 import json
 import os
+import shutil
+
+# ==================== FFMPEG PATH (RTX 50 serisi için güncel FFmpeg) ====================
+FFMPEG_PATH = r"C:\ffmpeg\bin\ffmpeg.exe"
+FFPROBE_PATH = r"C:\ffmpeg\bin\ffprobe.exe"
+
+if not os.path.exists(FFMPEG_PATH):
+    FFMPEG_PATH = shutil.which('ffmpeg') or 'ffmpeg'
+    FFPROBE_PATH = shutil.which('ffprobe') or 'ffprobe'
 
 logger = logging.getLogger(__name__)
 
@@ -238,7 +247,7 @@ def validate_video_quality(video_path, min_score=95):
     try:
         # 1. Check file integrity
         result = subprocess.run(
-            ['ffprobe', '-v', 'error', '-show_format', '-show_streams',
+            [FFPROBE_PATH, '-v', 'error', '-show_format', '-show_streams',
              '-print_format', 'json', video_path],
             capture_output=True, text=True, timeout=10
         )
@@ -360,7 +369,7 @@ def get_video_bitrate(video_path):
     """
     try:
         result = subprocess.run(
-            ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+            [FFPROBE_PATH, '-v', 'error', '-select_streams', 'v:0',
              '-show_entries', 'format=bit_rate', '-of', 'json', video_path],
             capture_output=True, text=True, timeout=10
         )

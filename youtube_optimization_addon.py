@@ -21,9 +21,18 @@ import hashlib
 import uuid
 import json
 import time
+import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 import logging
+
+# ==================== FFMPEG PATH (RTX 50 serisi için güncel FFmpeg) ====================
+FFMPEG_PATH = r"C:\ffmpeg\bin\ffmpeg.exe"
+FFPROBE_PATH = r"C:\ffmpeg\bin\ffprobe.exe"
+
+if not os.path.exists(FFMPEG_PATH):
+    FFMPEG_PATH = shutil.which('ffmpeg') or 'ffmpeg'
+    FFPROBE_PATH = shutil.which('ffprobe') or 'ffprobe'
 
 # Logger setup
 logger = logging.getLogger(__name__)
@@ -121,7 +130,7 @@ def check_video_duration(video_path, expected_duration=None, tolerance=2.0):
     """Video süresini kontrol et"""
     try:
         cmd = [
-            'ffprobe', '-v', 'error',
+            FFPROBE_PATH, '-v', 'error',
             '-show_entries', 'format=duration',
             '-of', 'default=noprint_wrappers=1:nokey=1',
             video_path
@@ -151,7 +160,7 @@ def check_video_integrity(video_path):
     """Video bütünlüğünü kontrol et (corrupted frames, errors)"""
     try:
         cmd = [
-            'ffmpeg', '-v', 'error',
+            FFMPEG_PATH, '-v', 'error',
             '-i', video_path,
             '-f', 'null', '-'
         ]
@@ -177,7 +186,7 @@ def check_audio_quality(video_path):
     try:
         # Ses seviyesi kontrolü
         cmd = [
-            'ffmpeg', '-i', video_path,
+            FFMPEG_PATH, '-i', video_path,
             '-af', 'volumedetect',
             '-f', 'null', '-'
         ]
@@ -209,7 +218,7 @@ def check_bitrate_consistency(video_path, min_bitrate='8M'):
     """Video bitrate tutarlılığını kontrol et"""
     try:
         cmd = [
-            'ffprobe', '-v', 'error',
+            FFPROBE_PATH, '-v', 'error',
             '-select_streams', 'v:0',
             '-show_entries', 'stream=bit_rate',
             '-of', 'default=noprint_wrappers=1:nokey=1',
@@ -242,7 +251,7 @@ def check_black_frames(video_path, max_duration=2.0):
     """Uzun süreli siyah frame kontrolü - 2 saniyeden uzun siyah bölümleri tespit et"""
     try:
         cmd = [
-            'ffmpeg', '-i', video_path,
+            FFMPEG_PATH, '-i', video_path,
             '-vf', f'blackdetect=d={max_duration}:pix_th=0.10',
             '-f', 'null', '-'
         ]
@@ -441,7 +450,7 @@ def enhanced_metadata_injection(video_path, output_path, metadata_config=None):
             metadata['unique_id'] = str(uuid.uuid4())
 
         # FFmpeg komutu oluştur
-        cmd = ['ffmpeg', '-i', video_path]
+        cmd = [FFMPEG_PATH, '-i', video_path]
 
         # Metadata parametrelerini ekle
         for key, value in metadata.items():
