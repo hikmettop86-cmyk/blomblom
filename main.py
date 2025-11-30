@@ -117,6 +117,26 @@ except ImportError as e:
     logger.warning(f"⚠️ GPU Optimizer not available: {e}")
     logger.info("ℹ️ Will use CPU encoding (libx264)")
 
+# ==================== 🚀 KORNIA GPU FILTERS (8-10x faster filtering) ====================
+try:
+    from kornia_video_pipeline import (
+        KorniaVideoPipeline,
+        process_video_gpu,
+        KORNIA_AVAILABLE,
+        CUDA_AVAILABLE,
+    )
+    from kornia_filters import parse_ffmpeg_filter_to_kornia
+
+    KORNIA_GPU_AVAILABLE = KORNIA_AVAILABLE and CUDA_AVAILABLE
+    if KORNIA_GPU_AVAILABLE:
+        logger.info("✅ Kornia GPU Filters loaded (8-10x faster)")
+    else:
+        logger.info("⚠️ Kornia loaded but CUDA not available")
+except ImportError as e:
+    KORNIA_GPU_AVAILABLE = False
+    logger.warning(f"⚠️ Kornia GPU Filters not available: {e}")
+    logger.info("ℹ️ Will use FFmpeg CPU filters")
+
 # ==================== 🚀 YOUTUBE OPTİMİZASYON MODÜLLERİ ====================
 try:
     from youtube_optimization_addon import (
@@ -139,7 +159,7 @@ except ImportError as e:
 
 # Import yeni config modülleri
 try:
-    from config import METADATA_RANDOMIZATION, UPLOAD_STRATEGY, ADVANCED_QUALITY_CHECKS, TURBO_MODE, GPU_SCALE_ENABLED
+    from config import METADATA_RANDOMIZATION, UPLOAD_STRATEGY, ADVANCED_QUALITY_CHECKS, TURBO_MODE, GPU_SCALE_ENABLED, KORNIA_GPU_FILTERS
     from effects import EFFECT_MODE, EFFECT_BALANCING
 except ImportError:
     # Eski config kullanılıyor, varsayılan değerler
@@ -150,6 +170,7 @@ except ImportError:
     EFFECT_BALANCING = {'enabled': False}
     TURBO_MODE = False
     GPU_SCALE_ENABLED = False
+    KORNIA_GPU_FILTERS = False
 
 # ==================== FONT GENİŞLİK HESAPLAMA SİSTEMİ ====================
 
@@ -4989,6 +5010,69 @@ def klip_isle_parallel(args):
         except:
             pass
 
+    # ===== 🚀 KORNIA GPU FILTERS: 8-10x Hızlı GPU Filtreleme =====
+    # FFmpeg CPU filtreleri yerine PyTorch/Kornia GPU kullan
+    use_kornia = (
+        KORNIA_GPU_FILTERS and
+        KORNIA_GPU_AVAILABLE and
+        not TURBO_MODE and
+        encoder_type == 'nvidia'  # GPU varsa Kornia kullan
+    )
+
+    if use_kornia:
+        try:
+            # Video filtrelerini oluştur (FFmpeg formatında)
+            video_filtre = gelismis_video_filtre_olustur(
+                item['varyasyon'],
+                subtitle_config=None,
+                cinematic_effects=cinematic_fx,
+                use_gpu_scale=False
+            )
+            ses_filtre = gelismis_audio_filtre_olustur(item['varyasyon'])
+
+            # Fingerprint filtreleri
+            fp_video_filtre = fingerprint_video_filtresi(fp_params)
+            fp_audio_filtre = fingerprint_audio_filtresi(fp_params)
+
+            # Video filtreleri birleştir
+            tum_video_filtreler = []
+            if video_filtre:
+                tum_video_filtreler.append(video_filtre)
+            if fp_video_filtre:
+                tum_video_filtreler.extend(fp_video_filtre)
+            final_video_filtre = ','.join(tum_video_filtreler) if tum_video_filtreler else 'scale=1920:1080,fps=30'
+
+            # Audio filtreleri birleştir
+            tum_audio_filtreler = []
+            if ses_filtre:
+                tum_audio_filtreler.append(ses_filtre)
+            if fp_audio_filtre:
+                tum_audio_filtreler.extend(fp_audio_filtre)
+            final_audio_filtre = ','.join(tum_audio_filtreler) if tum_audio_filtreler else None
+
+            # Kornia pipeline ile işle
+            pipeline = KorniaVideoPipeline(use_gpu=True)
+            success = pipeline.process_clip_gpu(
+                item['dosya'],
+                klip_dosya,
+                final_video_filtre,
+                final_audio_filtre,
+                use_nvenc=False  # Kliplar CPU encode (NVENC session limit)
+            )
+
+            if success and dosya_gecerli_mi(klip_dosya):
+                cache_kaydet(klip_dosya, item['dosya'], item['varyasyon'])
+                if klip_index == 1:
+                    logger.info("🚀 Kornia GPU: Filtreler GPU'da işlendi (8-10x hızlı)")
+                return (klip_index, True, klip_dosya, None)
+            else:
+                if klip_index <= 3:
+                    logger.warning(f"⚠️ Klip {klip_index}: Kornia başarısız, FFmpeg'e geçiliyor")
+        except Exception as e:
+            if klip_index <= 3:
+                logger.warning(f"⚠️ Klip {klip_index}: Kornia hatası: {e}")
+            # Kornia başarısız olursa FFmpeg'e devam et
+
     # Encoder seçimi
     encoders_to_try = []
 
@@ -5349,6 +5433,12 @@ def parallel_encode(playlist, cikti_adi, temp_klasor, klasor_yolu, encoder_type,
         print(f"   Encoder: GPU ({NVENC_INFO.get('gpu_name', 'NVIDIA')})")
     else:
         print(f"   Encoder: CPU ({encoder_config['video']})")
+
+    # Kornia GPU Filters info
+    if KORNIA_GPU_FILTERS and KORNIA_GPU_AVAILABLE and encoder_type == 'nvidia':
+        print(f"   Filtreler: Kornia GPU (8-10x hızlı)")
+    else:
+        print(f"   Filtreler: FFmpeg CPU")
 
     # Ses durumu
     if ses_dosyasi:

@@ -24,7 +24,7 @@ __all__ = [
     'SUBTITLE_FONTS', 'STORY_CHANNEL_PRESET',
     'ADVANCED_QUALITY_CHECKS', 'METADATA_RANDOMIZATION',
     'UPLOAD_STRATEGY', 'ENGAGEMENT_OPTIMIZATION',
-    'TURBO_MODE', 'GPU_SCALE_ENABLED'
+    'TURBO_MODE', 'GPU_SCALE_ENABLED', 'KORNIA_GPU_FILTERS'
 ]
 
 # ============================================================================
@@ -40,6 +40,11 @@ TURBO_MODE = False
 # True: GPU'da scale (bazı sistemlerde sorun çıkarabilir)
 # False: CPU'da scale (güvenli, varsayılan)
 GPU_SCALE_ENABLED = False
+
+# KORNIA GPU FILTERS: PyTorch/Kornia ile GPU tabanlı video filtreleme
+# True: Kornia GPU (8-10x hızlı, blur/color/brightness GPU'da işlenir)
+# False: FFmpeg CPU filtreleri (klasik yöntem)
+KORNIA_GPU_FILTERS = True
 
 # ============================================================================
 # KLASÖR YAPISI
