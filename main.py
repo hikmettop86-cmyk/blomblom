@@ -5199,104 +5199,27 @@ def klip_isle_parallel(args):
                             '-sc_threshold', str(random.randint(35, 45)),
                         ])
                     elif current_encoder_type == 'nvidia':
-                        # ===== 🚀 GPU OPTIMIZER V1.0 (NVENC) =====
-                        if GPU_OPTIMIZER_AVAILABLE and NVENC_INFO['available']:
-                            try:
-                                # Build x264-equivalent parameters from current settings
-                                nv_settings = QUALITY_SETTINGS.get('nvidia', {})
-                                cpu_settings = QUALITY_SETTINGS.get('cpu', {})
-
-                                x264_params = {
-                                    'encoder': 'libx264',
-                                    'preset': cpu_settings.get('preset', 'medium'),
-                                    'crf': cpu_settings.get('crf', 18),
-                                    'bitrate': nv_settings.get('bitrate', '12M'),
-                                    'maxrate': nv_settings.get('maxrate', '15M'),
-                                    'profile': nv_settings.get('profile', 'high'),
-                                    'level': nv_settings.get('level'),  # ✅ None = auto-detect (RTX 50 için)
-                                    'keyint': fp_params['gop_size'],
-                                    'bframes': fp_params['bframes'],
-                                    'refs': 3,
-                                    'gpu_id': 0,
-                                }
-
-                                # Translate to NVENC (pass cached NVENC_INFO to avoid re-detection)
-                                nvenc_params = translate_x264_to_nvenc(x264_params, NVENC_INFO)
-
-                                # Apply NVENC parameters
-                                komut.extend(nvenc_params['video_params'])
-
-                                # Add color space (NVENC compatible)
-                                komut.extend([
-                                    '-colorspace', 'bt709',
-                                    '-color_primaries', 'bt709',
-                                    '-color_trc', 'bt709',
-                                    '-color_range', VIDEO_OUTPUT['color_range'],
-                                ])
-
-                                if klip_index == 1:
-                                    logger.debug(f"🚀 GPU Optimizer: {nvenc_params['encoder']} (expected {nvenc_params['expected_speedup']}x speedup)")
-                                    logger.debug(f"   Preset: {nvenc_params['preset']}, CQ: {nvenc_params['cq_level']}")
-
-                            except Exception as e:
-                                logger.warning(f"⚠️ GPU Optimizer failed, using legacy NVENC: {e}")
-                                # Fallback to legacy NVENC - KLİP ENCODİNG p1 (ara dosya, hızlı)
-                                nv_settings = QUALITY_SETTINGS['nvidia']
-                                nvenc_cmd = [
-                                    '-c:v', 'h264_nvenc',
-                                    '-preset', 'p1',  # ✅ C OPT: p4→p1 (ara dosya, final'de tekrar encode)
-                                    '-rc', nv_settings['rc'],
-                                    '-b:v', nv_settings['bitrate'],
-                                    '-maxrate', nv_settings['maxrate'],
-                                    '-bufsize', nv_settings['bufsize'],
-                                    '-profile:v', nv_settings['profile'],
-                                ]
-                                # ✅ Level sadece None değilse ekle (RTX 50 auto-detect)
-                                if nv_settings.get('level') is not None:
-                                    nvenc_cmd.extend(['-level', str(nv_settings['level'])])
-                                nvenc_cmd.extend([
-                                    '-spatial-aq', str(nv_settings.get('spatial_aq', 1)),
-                                    '-temporal-aq', str(nv_settings.get('temporal_aq', 1)),
-                                    '-aq-strength', str(nv_settings.get('aq_strength', 8)),
-                                    '-rc-lookahead', str(nv_settings.get('lookahead', 32)),
-                                    '-b_ref_mode', nv_settings.get('b_ref_mode', 'middle'),
-                                    '-colorspace', 'bt709',
-                                    '-color_primaries', 'bt709',
-                                    '-color_trc', 'bt709',
-                                    '-color_range', VIDEO_OUTPUT['color_range'],
-                                    '-g', str(nv_settings.get('g', 60)),
-                                    '-bf', str(nv_settings.get('bf', 3)),
-                                ])
-                                komut.extend(nvenc_cmd)
-                        else:
-                            # Legacy NVENC (GPU Optimizer not available) - KLİP ENCODİNG p1 (hızlı)
-                            nv_settings = QUALITY_SETTINGS['nvidia']
-                            nvenc_cmd = [
-                                '-c:v', 'h264_nvenc',
-                                '-preset', 'p1',  # ✅ C OPT: p4→p1 (ara dosya, final'de tekrar encode)
-                                '-rc', nv_settings['rc'],
-                                '-b:v', nv_settings['bitrate'],
-                                '-maxrate', nv_settings['maxrate'],
-                                '-bufsize', nv_settings['bufsize'],
-                                '-profile:v', nv_settings['profile'],
-                            ]
-                            # ✅ Level sadece None değilse ekle (RTX 50 auto-detect)
-                            if nv_settings.get('level') is not None:
-                                nvenc_cmd.extend(['-level', str(nv_settings['level'])])
-                            nvenc_cmd.extend([
-                                '-spatial-aq', str(nv_settings.get('spatial_aq', 1)),
-                                '-temporal-aq', str(nv_settings.get('temporal_aq', 1)),
-                                '-aq-strength', str(nv_settings.get('aq_strength', 8)),
-                                '-rc-lookahead', str(nv_settings.get('lookahead', 32)),
-                                '-b_ref_mode', nv_settings.get('b_ref_mode', 'middle'),
-                                '-colorspace', 'bt709',
-                                '-color_primaries', 'bt709',
-                                '-color_trc', 'bt709',
-                                '-color_range', VIDEO_OUTPUT['color_range'],
-                                '-g', str(nv_settings.get('g', 60)),
-                                '-bf', str(nv_settings.get('bf', 3)),
-                            ])
-                            komut.extend(nvenc_cmd)
+                        # ===== 🚀 KLİP ENCODİNG: CPU (NVENC SESSION LİMİT SORUNU) =====
+                        # RTX 5060 Ti: Sadece 3-5 eşzamanlı NVENC session destekliyor
+                        # 31 worker aynı anda NVENC kullanamaz → CPU encoding kullan
+                        # Final encoding'de NVENC kullanılacak (tek session)
+                        cpu_settings = QUALITY_SETTINGS.get('cpu', {})
+                        komut.extend([
+                            '-c:v', 'libx264',
+                            '-preset', 'veryfast',  # Hızlı, kliplar küçük (1-5 sn)
+                            '-crf', '18',
+                            '-pix_fmt', 'yuv420p',
+                            '-colorspace', 'bt709',
+                            '-color_primaries', 'bt709',
+                            '-color_trc', 'bt709',
+                            '-color_range', VIDEO_OUTPUT['color_range'],
+                            '-g', str(fp_params['gop_size']),
+                            '-keyint_min', str(fp_params['min_keyint']),
+                            '-bf', str(fp_params['bframes']),
+                        ])
+                        if klip_index == 1:
+                            logger.info(f"🔧 Klip encoding: CPU (libx264 veryfast) - 31 paralel worker")
+                            logger.info(f"🚀 Final encoding: NVENC GPU kullanılacak")
                     elif current_encoder_type == 'amd':
                         amd_settings = QUALITY_SETTINGS['amd']
                         komut.extend([
